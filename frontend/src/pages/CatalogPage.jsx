@@ -1,22 +1,112 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Search, 
-  Filter, 
   ShoppingCart, 
   Calculator, 
-  ShieldCheck, 
   Star, 
-  Sparkles, 
   X, 
-  Check, 
   Leaf,
-  ChevronDown
+  Loader2
 } from 'lucide-react';
-import { addToCart } from '../store/cartSlice';
+import useCart from '../features/cart/hooks/useCart';
+import axiosClient from '../services/http/axiosClient';
+
+const INITIAL_PRODUCTS = [
+  {
+    id: 'cd62aa4a-9f5c-4d1d-9f7c-c0b56ed58083',
+    name: 'Pioneer Hybrid Mustard Seeds 45S46',
+    category: 'Seeds',
+    price: 480,
+    originalPrice: 550,
+    unit: '1 kg Pack',
+    rating: 4.9,
+    reviewsCount: 142,
+    image: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=80',
+    badge: 'Bestseller',
+    dosageNote: '2.5 kg per acre',
+    targetCrop: 'Mustard',
+    brand: 'Pioneer'
+  },
+  {
+    id: '80e5b90f-3137-484a-93f8-a0a7efd90a8c',
+    name: 'IFFCO Bio NPK Liquid Fertilizer Consortium',
+    category: 'Fertilisers',
+    price: 320,
+    originalPrice: 400,
+    unit: '1 Litre Bottle',
+    rating: 4.8,
+    reviewsCount: 98,
+    image: 'https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=600&auto=format&fit=crop&q=80',
+    badge: 'Eco-Organic',
+    dosageNote: '5 ml per liter of water',
+    targetCrop: 'Wheat & Pulses',
+    brand: 'IFFCO'
+  },
+  {
+    id: '69879241-7ebe-45df-912d-e9c54ec0b28b',
+    name: 'Syngenta Ampligo Insecticide (Chlorantraniliprole)',
+    category: 'Pesticides & Fungicides',
+    price: 890,
+    originalPrice: 1050,
+    unit: '250 ml',
+    rating: 4.7,
+    reviewsCount: 76,
+    image: 'https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=600&auto=format&fit=crop&q=80',
+    badge: 'Popular Crop Care',
+    dosageNote: '100 ml per acre',
+    targetCrop: 'Cotton & Paddy',
+    brand: 'Syngenta'
+  },
+  {
+    id: '4f25e034-fff6-4f30-a513-35db6b0f9346',
+    name: 'Kisan Kraft 16L Battery Operated Knapsack Sprayer',
+    category: 'Farm Machinery',
+    price: 2850,
+    originalPrice: 3400,
+    unit: '1 Set',
+    rating: 4.9,
+    reviewsCount: 210,
+    image: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb1b7a5?w=600&auto=format&fit=crop&q=80',
+    badge: 'Top Rated Tool',
+    dosageNote: 'Dual spray nozzle attachment',
+    targetCrop: 'All',
+    brand: 'Kisan Kraft'
+  },
+  {
+    id: 'bf03a960-3612-4886-9e65-9d0f7ea04303',
+    name: 'Shriram Super Wheat Seeds HD 2967',
+    category: 'Seeds',
+    price: 1250,
+    originalPrice: 1400,
+    unit: '40 kg Bag',
+    rating: 4.8,
+    reviewsCount: 185,
+    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80',
+    badge: 'High Yield',
+    dosageNote: '40 kg per acre',
+    targetCrop: 'Wheat',
+    brand: 'Shriram'
+  },
+  {
+    id: '3e8c327c-2362-456e-a2e7-214c464659f3',
+    name: 'Jain Drip Irrigation Starter Kit for 1 Acre',
+    category: 'Tools & Irrigation',
+    price: 6490,
+    originalPrice: 7800,
+    unit: '1 Acre Kit',
+    rating: 4.9,
+    reviewsCount: 64,
+    image: 'https://images.unsplash.com/photo-1563514227147-6d2ff665a6a0?w=600&auto=format&fit=crop&q=80',
+    badge: 'Water Saver',
+    dosageNote: 'Includes connectors & lateral pipes',
+    targetCrop: 'Sugarcane & Vegetables',
+    brand: 'Jain Irrigation'
+  }
+];
 
 export const CatalogPage = () => {
-  const dispatch = useDispatch();
+  const { addToCart, isAddingToCart } = useCart();
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCrop, setSelectedCrop] = useState('All');
@@ -30,108 +120,40 @@ export const CatalogPage = () => {
   const categories = ['All', 'Seeds', 'Pesticides & Fungicides', 'Fertilisers', 'Farm Machinery', 'Tools & Irrigation'];
   const crops = ['All', 'Wheat', 'Cotton', 'Paddy (Rice)', 'Soybean', 'Sugarcane', 'Tomato/Vegetables'];
 
-  const products = [
-    {
-      id: 'prod-1',
-      name: 'Bio-Shield Tri-Fungicide Gold',
-      category: 'Pesticides & Fungicides',
-      price: 649,
-      originalPrice: 799,
-      unit: '500 ml bottle',
-      rating: 4.9,
-      reviewsCount: 320,
-      image: 'https://images.unsplash.com/photo-1628352081506-83c43123ed6d?auto=format&fit=crop&q=80&w=600',
-      badge: 'ICAR Approved',
-      dosageNote: '2.5 ml per liter of water (1.25 L per 5 acres)',
-      targetCrop: 'Wheat',
-      brand: 'AgriBio Tech'
+  // Fetch live products from DRF backend
+  const productsQuery = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const res = await axiosClient.get('/products/');
+      return res.data?.results || res.data || [];
     },
-    {
-      id: 'prod-2',
-      name: 'AgriPower NPK 19:19:19 Soluble Fert',
-      category: 'Fertilisers',
-      price: 480,
-      originalPrice: 550,
-      unit: '1 kg pack',
-      rating: 4.8,
-      reviewsCount: 412,
-      image: 'https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?auto=format&fit=crop&q=80&w=600',
-      badge: '100% Water Soluble',
-      dosageNote: '5 gram per liter during flowering',
-      targetCrop: 'Soybean',
-      brand: 'NutriKrishi'
-    },
-    {
-      id: 'prod-3',
-      name: 'Krishi-Pro Battery Knapsack Sprayer 16L',
-      category: 'Farm Machinery',
-      price: 2850,
-      originalPrice: 3400,
-      unit: '1 Unit (12V 8Ah Battery)',
-      rating: 4.9,
-      reviewsCount: 184,
-      image: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=600',
-      badge: '6 Months Warranty',
-      dosageNote: 'Dual nozzle adjustable spray',
-      targetCrop: 'All',
-      brand: 'Krishi-Pro'
-    },
-    {
-      id: 'prod-4',
-      name: 'Kisan Shakti Hybrid Cotton Seed (BT-II)',
-      category: 'Seeds',
-      price: 890,
-      originalPrice: 950,
-      unit: '475 gm packet',
-      rating: 5.0,
-      reviewsCount: 520,
-      image: 'https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&q=80&w=600',
-      badge: 'High Yield Hybrid',
-      dosageNote: '2 packets per acre',
-      targetCrop: 'Cotton',
-      brand: 'Kisan Seeds'
-    },
-    {
-      id: 'prod-5',
-      name: 'Neem-Protect Organic Insecticide 10000 PPM',
-      category: 'Pesticides & Fungicides',
-      price: 520,
-      originalPrice: 600,
-      unit: '1 Liter bottle',
-      rating: 4.7,
-      reviewsCount: 240,
-      image: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&q=80&w=600',
-      badge: '100% Organic',
-      dosageNote: '3 ml per liter of water',
-      targetCrop: 'Paddy (Rice)',
-      brand: 'EcoAgri'
-    },
-    {
-      id: 'prod-6',
-      name: 'Precision Drip Irrigation Kit 1 Acre',
-      category: 'Tools & Irrigation',
-      price: 4990,
-      originalPrice: 6200,
-      unit: '1 Full Acre Kit',
-      rating: 4.9,
-      reviewsCount: 110,
-      image: 'https://images.unsplash.com/photo-1563514227147-6d2ff665a6a0?auto=format&fit=crop&q=80&w=600',
-      badge: 'Water Saver 60%',
-      dosageNote: 'Includes lateral pipes & drippers',
-      targetCrop: 'Sugarcane',
-      brand: 'DripTech'
-    }
-  ];
+    staleTime: 1000 * 60 * 5,
+  });
 
-  const filteredProducts = products.filter(p => {
-    const matchCategory = selectedCategory === 'All' || p.category === selectedCategory;
+  const rawProducts = productsQuery.data?.length ? productsQuery.data.map(p => ({
+    id: p.id,
+    name: p.name,
+    category: p.category_name || p.category || 'Agri Input',
+    price: parseFloat(p.price) || 0,
+    originalPrice: p.original_price ? parseFloat(p.original_price) : null,
+    unit: p.unit || '1 unit',
+    rating: p.rating || 4.8,
+    reviewsCount: p.reviews_count || 50,
+    image: p.image_url || p.image || 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=80',
+    badge: p.badge || 'Certified',
+    dosageNote: p.description || 'Standard recommended dosage',
+    targetCrop: 'All',
+    brand: 'AgriMart Certified'
+  })) : INITIAL_PRODUCTS;
+
+  const filteredProducts = rawProducts.filter(p => {
+    const matchCategory = selectedCategory === 'All' || p.category.toLowerCase().includes(selectedCategory.toLowerCase());
     const matchCrop = selectedCrop === 'All' || p.targetCrop === selectedCrop || p.targetCrop === 'All';
     const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         p.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchCategory && matchCrop && matchSearch;
   });
 
-  // Calculate dosages based on acreage
   const calculateDosageRequirements = () => {
     const acres = parseFloat(landAcres) || 1;
     return [
@@ -244,18 +266,19 @@ export const CatalogPage = () => {
               {/* Dosage Guideline */}
               <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-amber-300">
                 <span className="font-bold block text-[10px] text-amber-400 uppercase mb-0.5">Dosage Recommendation:</span>
-                <span>💡 {product.dosageNote}</span>
+                <span className="line-clamp-2">💡 {product.dosageNote}</span>
               </div>
 
               <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
                 <div>
                   <span className="text-xl font-extrabold text-white">₹{product.price}</span>
-                  <span className="text-xs text-slate-500 line-through ml-2">₹{product.originalPrice}</span>
+                  {product.originalPrice && <span className="text-xs text-slate-500 line-through ml-2">₹{product.originalPrice}</span>}
                 </div>
 
                 <button
-                  onClick={() => dispatch(addToCart(product))}
-                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold transition-all shadow-md shadow-emerald-950 flex items-center gap-2 text-xs"
+                  disabled={isAddingToCart}
+                  onClick={() => addToCart({ productId: product.id, quantity: 1 })}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-bold transition-all shadow-md shadow-emerald-950 flex items-center gap-2 text-xs"
                 >
                   <ShoppingCart className="w-4 h-4" />
                   <span>Add to Cart</span>
@@ -344,3 +367,5 @@ export const CatalogPage = () => {
     </div>
   );
 };
+
+export default CatalogPage;

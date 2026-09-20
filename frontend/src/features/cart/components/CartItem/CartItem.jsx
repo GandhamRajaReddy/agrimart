@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react";
 import QuantitySelector from "../QuantitySelector/QuantitySelector";
 
 export const CartItem = ({ item, onUpdateQuantity, onRemove, isUpdating = false }) => {
-  const product = item.product || item;
+  const product = item.product || {};
   const name = product.name || "Agricultural Input Product";
   const price = product.price || 0;
   const image = product.image_url || product.image || "https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=200&auto=format&fit=crop&q=80";

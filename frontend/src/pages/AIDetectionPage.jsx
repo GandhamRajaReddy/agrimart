@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { 
   Scan, 
   Upload, 
@@ -15,10 +14,10 @@ import {
   Bug,
   Sprout
 } from 'lucide-react';
-import { addToCart } from '../store/cartSlice';
+import useCart from '../features/cart/hooks/useCart';
 
 export const AIDetectionPage = () => {
-  const dispatch = useDispatch();
+  const { addToCart, isAddingToCart } = useCart();
 
   const [selectedImage, setSelectedImage] = useState('https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=800');
   const [isScanning, setIsScanning] = useState(false);
@@ -36,11 +35,11 @@ export const AIDetectionPage = () => {
     chemicalCure: 'Spray Propiconazole 25% EC @ 1 ml/Liter water OR Bio-Shield Tri-Fungicide Gold.',
     organicCure: 'Apply Neem oil (10,000 PPM) 3 ml/L + Sour buttermilk spray (200 ml/15L tank).',
     cureProduct: {
-      id: 'prod-1',
-      name: 'Bio-Shield Tri-Fungicide Gold',
+      id: '69879241-7ebe-45df-912d-e9c54ec0b28b',
+      name: 'Syngenta Ampligo Bio-Fungicide Protection',
       category: 'Pesticides & Fungicides',
-      price: 649,
-      unit: '500 ml bottle',
+      price: 890,
+      unit: '250 ml bottle',
       image: 'https://images.unsplash.com/photo-1628352081506-83c43123ed6d?auto=format&fit=crop&q=80&w=400',
       dosageNote: '2.5 ml per liter of water',
       targetCrop: 'Wheat & Paddy'
@@ -234,8 +233,9 @@ export const AIDetectionPage = () => {
               </div>
 
               <button
-                onClick={() => dispatch(addToCart(scanResult.cureProduct))}
-                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-950 flex items-center justify-center gap-2 transition-all shrink-0"
+                disabled={isAddingToCart}
+                onClick={() => addToCart({ productId: scanResult.cureProduct.id, quantity: 1 })}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-950 flex items-center justify-center gap-2 transition-all shrink-0"
               >
                 <ShoppingCart className="w-4 h-4" />
                 <span>Buy Cure Product</span>

@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { ROUTES } from "../config/routes";
 import { mobileQuickLinks, primaryNavigation } from "../routes/routeConfig";
-import { selectCartCount, toggleCartDrawer } from "../store/cartSlice";
+import { toggleCartDrawer } from "../store/cartSlice";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { useCart } from "../features/cart/hooks/useCart";
 

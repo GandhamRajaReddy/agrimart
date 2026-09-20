@@ -1,11 +1,10 @@
 import { Droplets, Leaf, ShoppingBag, Sparkles, Sprout, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
 
 import bannerImage from "../../../assets/images/banners/background_image.png";
 import Badge from "../../../components/common/Badge";
 import Button from "../../../components/common/Button";
-import { addToCart } from "../../../store/cartSlice";
+import { useCart } from "../../cart/hooks/useCart";
 
 const art = {
   seed: { Icon: Sprout, className: "from-[#e5efcc] via-[#b8d07f] to-[#6d9f43]", label: "Seeds" },
@@ -17,7 +16,7 @@ const art = {
 const formatMoney = (amount) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 
 const FeaturedProducts = ({ products }) => {
-  const dispatch = useDispatch();
+  const { addToCart, isAddingToCart } = useCart();
 
   return (
     <section className="border-y border-[#1d4b34]/8 bg-[#eaf0e7]/72 py-20 sm:py-24">
@@ -63,7 +62,8 @@ const FeaturedProducts = ({ products }) => {
                       className="h-9 w-9 !px-0"
                       aria-label={`Add ${product.name} to cart`}
                       icon={ShoppingBag}
-                      onClick={() => dispatch(addToCart({ ...product, image: bannerImage }))}
+                      disabled={isAddingToCart}
+                      onClick={() => addToCart({ productId: product.id, quantity: 1 })}
                     />
                   </div>
                 </div>
@@ -75,5 +75,6 @@ const FeaturedProducts = ({ products }) => {
     </section>
   );
 };
+
 
 export default FeaturedProducts;

@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDispatch } from 'react-redux';
 import { cartApi } from '../api/cartApi';
+import { openCartDrawer } from '../../../store/cartSlice';
 
 export const cartQueryKeys = {
   all: ['cart'],
@@ -8,6 +10,7 @@ export const cartQueryKeys = {
 
 export const useCart = () => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
 
   // 1. Fetch Cart Query
   const cartQuery = useQuery({
@@ -18,9 +21,10 @@ export const useCart = () => {
 
   // 2. Add To Cart Mutation
   const addToCartMutation = useMutation({
-    mutationFn: ({ productId, quantity }) => cartApi.addToCart({ productId, quantity }),
+    mutationFn: ({ productId, quantity = 1 }) => cartApi.addToCart({ productId, quantity }),
     onSuccess: (data) => {
       queryClient.setQueryData(cartQueryKeys.detail(), data);
+      dispatch(openCartDrawer());
     },
   });
 
@@ -61,7 +65,13 @@ export const useCart = () => {
     isError: cartQuery.isError,
     error: cartQuery.error,
 
-    addToCart: addToCartMutation.mutateAsync,
+    addToCart: (params) => {
+      // Support passing both { productId, quantity } or string productId
+      if (typeof params === 'string') {
+        return addToCartMutation.mutateAsync({ productId: params, quantity: 1 });
+      }
+      return addToCartMutation.mutateAsync(params);
+    },
     isAddingToCart: addToCartMutation.isPending,
 
     updateQuantity: updateQuantityMutation.mutateAsync,
