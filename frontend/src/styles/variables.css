@@ -1,0 +1,20 @@
+:root {
+  --color-canvas: #f6f5ef;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eaf0e7;
+  --color-ink: #163124;
+  --color-ink-muted: #587062;
+  --color-forest: #1d4b34;
+  --color-forest-deep: #102b1d;
+  --color-leaf: #5d8f3d;
+  --color-leaf-light: #d9e7c7;
+  --color-harvest: #d68b35;
+  --color-harvest-light: #f8e7c6;
+  --color-danger: #b84736;
+  --shadow-soft: 0 18px 50px rgba(22, 49, 36, 0.09);
+  --shadow-lifted: 0 24px 60px rgba(22, 49, 36, 0.16);
+  --radius-card: 1.5rem;
+  --radius-control: 0.875rem;
+  --font-display: "Newsreader", Georgia, serif;
+  --font-body: "Manrope", "Segoe UI", sans-serif;
+}

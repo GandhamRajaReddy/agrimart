@@ -1,0 +1,81 @@
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    overflow-x: hidden;
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    font-family: var(--font-body);
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    color: #ffffff;
+    background: var(--color-forest);
+  }
+
+  :focus-visible {
+    outline: 3px solid rgba(93, 143, 61, 0.55);
+    outline-offset: 3px;
+  }
+}
+
+.page-shell {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(217, 231, 199, 0.72), transparent 22rem),
+    var(--color-canvas);
+}
+
+.content-container {
+  width: min(100% - 2rem, 76rem);
+  margin-inline: auto;
+}
+
+@media (min-width: 640px) {
+  .content-container {
+    width: min(100% - 3rem, 76rem);
+  }
+}
+
+.display-font {
+  font-family: var(--font-display);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-forest);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.surface-card {
+  border: 1px solid rgba(29, 75, 52, 0.1);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--shadow-soft);
+}
