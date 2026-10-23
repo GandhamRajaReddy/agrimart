@@ -25,6 +25,7 @@ export const LoginPage = () => {
     verifyOTP,
     isVerifyingOTP,
     pendingOTP,
+    cancelPendingOTP,
     login,
     isLoggingIn,
     loginError,
@@ -211,6 +212,7 @@ export const LoginPage = () => {
 
       <OTPVerificationModal
         isOpen={!!pendingOTP && pendingOTP.mode !== 'register'}
+        onClose={() => { cancelPendingOTP(); setLocalError(''); }}
         phone={pendingOTP?.phone || watchPhoneOrEmail}
         onVerify={handleVerifyOTP}
         onResend={handleResendOTP}
