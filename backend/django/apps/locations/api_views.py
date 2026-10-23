@@ -36,30 +36,48 @@ class KarnatakaLocationsView(APIView):
         search = request.query_params.get("search", "").strip()
 
         if level == "district":
-            return Response({"state": "Karnataka", "results": [
-                {"code": item["code"], "name": item["name"]}
-                for item in regions["districts"]
-            ]})
+            return Response({
+                "state": "Karnataka",
+                "results": [
+                    {"code": item["code"], "name": item["name"]}
+                    for item in regions["districts"]
+                ],
+            })
 
         if level == "taluk":
             results = [
                 {"code": item["code"], "name": item["name"]}
                 for item in regions["taluks"]
-                if not district or item["district"] == district
+                if not district or item["district"].casefold() == district.casefold()
             ]
             return Response({"state": "Karnataka", "results": results})
 
         if level == "village":
             if not district or not taluk:
-                return Response({"state": "Karnataka", "results": [], "count": 0})
-            if len(search) < 2:
-                return Response({"state": "Karnataka", "results": [], "count": 0, "search_min_length": 2})
-            rows = [row for row in load_villages()
-                    if row["district"].casefold() == district.casefold()
-                    and row["taluk"].casefold() == taluk.casefold()
-                    and search.casefold() in row["name"].casefold()]
+                return Response({
+                    "state": "Karnataka", "results": [], "count": 0,
+                    "detail": "Select a district and taluk to list villages.",
+                })
+
+            villages = load_villages()
+            if not villages:
+                return Response({
+                    "state": "Karnataka", "results": [], "count": 0,
+                    "data_ready": False,
+                })
+
+            rows = [
+                row for row in villages
+                if row["district"].casefold() == district.casefold()
+                and row["taluk"].casefold() == taluk.casefold()
+                and (not search or search.casefold() in row["name"].casefold())
+            ]
             rows.sort(key=lambda row: row["name"].casefold())
-            results = rows[:100]
-            return Response({"state": "Karnataka", "results": results, "count": len(rows), "truncated": len(rows) > 100, "data_ready": bool(load_villages())})
+            return Response({
+                "state": "Karnataka",
+                "results": rows,
+                "count": len(rows),
+                "data_ready": True,
+            })
 
         return Response({"detail": "Unsupported location level."}, status=400)
