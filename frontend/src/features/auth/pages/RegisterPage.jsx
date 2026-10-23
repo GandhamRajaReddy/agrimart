@@ -93,7 +93,7 @@ export const RegisterPage = () => {
   }, [selectedDistrict, selectedTaluk]);
 
   useEffect(() => {
-    if (!selectedDistrict || !selectedVillage) {
+    if (selectedRole !== 'Farmer' || !selectedDistrict || !selectedVillage) {
       setMandiOptions([]);
       setValue('mandi', '', { shouldValidate: true });
       return undefined;
@@ -113,7 +113,7 @@ export const RegisterPage = () => {
       }
     });
     return () => { active = false; };
-  }, [selectedDistrict, selectedTaluk, selectedVillage, setValue]);
+  }, [selectedRole, selectedDistrict, selectedTaluk, selectedVillage, setValue]);
 
   const onFormSubmit = async (data) => {
     setLocalError('');
