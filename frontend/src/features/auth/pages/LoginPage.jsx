@@ -12,6 +12,7 @@ import Button from '../../../components/common/Button';
 
 export const LoginPage = () => {
   const [authMode, setAuthMode] = useState('password');
+  const [otpRole, setOtpRole] = useState('Farmer');
   const {
     requestOTP,
     isRequestingOTP,
@@ -46,7 +47,7 @@ export const LoginPage = () => {
     try {
       if (authMode === 'otp') {
         const cleanedPhone = data.phoneOrEmail.replace(/[^\d+]/g, '');
-        await requestOTP(cleanedPhone, 'Farmer');
+        await requestOTP(cleanedPhone, otpRole);
       } else {
         await login({
           phoneOrEmail: data.phoneOrEmail,
@@ -85,7 +86,7 @@ export const LoginPage = () => {
   const handleResendOTP = async () => {
     setLocalError('');
     try {
-      await requestOTP(pendingOTP?.phone || watchPhoneOrEmail, pendingOTP?.role || 'Farmer');
+      await requestOTP(pendingOTP?.phone || watchPhoneOrEmail, pendingOTP?.role || otpRole);
     } catch (err) {
       setLocalError(err.response?.data?.detail || err.message || 'Failed to resend OTP.');
     }
@@ -132,6 +133,21 @@ export const LoginPage = () => {
       </div>
 
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
+        {authMode === 'otp' && (
+          <div className="space-y-1.5">
+            <label htmlFor="otp-role" className="block text-sm font-semibold text-emerald-200">Account type</label>
+            <select
+              id="otp-role"
+              value={otpRole}
+              onChange={(event) => setOtpRole(event.target.value)}
+              className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
+            >
+              <option value="Farmer">Farmer</option>
+              <option value="Buyer">Buyer</option>
+              <option value="Vendor">Vendor</option>
+            </select>
+          </div>
+        )}
         <Input
           label={authMode === 'otp' ? 'Mobile Number' : 'Mobile Number or Email'}
           placeholder={authMode === 'otp' ? 'Enter your mobile number' : 'Enter mobile number or email'}
