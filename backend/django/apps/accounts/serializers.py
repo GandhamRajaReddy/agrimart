@@ -85,6 +85,11 @@ class VerifyOTPSerializer(serializers.Serializer):
     def validate_role(self, value):
         return normalize_public_role(value)
 
+    def validate(self, attrs):
+        if any(attrs.get(key) for key in ("district", "taluk", "village")):
+            validate_karnataka_location(attrs, require_village=bool(attrs.get("village")))
+        return attrs
+
 
 class LoginSerializer(serializers.Serializer):
     phone_or_email = serializers.CharField(required=True, max_length=255)
