@@ -1,6 +1,17 @@
 from django.db import migrations, models
 
 
+def normalize_legacy_locations(apps, schema_editor):
+    User = apps.get_model("accounts", "User")
+    User.objects.filter(location="Indore, Madhya Pradesh").update(location="Karnataka")
+    User.objects.filter(mandi="Indore Grain Mandi").update(mandi="")
+
+
+def reverse_legacy_locations(apps, schema_editor):
+    # Location values are user profile data; don't restore an inaccurate placeholder.
+    pass
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("accounts", "0003_remove_default_otp_code"),
@@ -32,12 +43,5 @@ class Migration(migrations.Migration):
             name="mandi",
             field=models.CharField(blank=True, default="", max_length=255),
         ),
-        migrations.RunPython(
-            code=lambda apps, schema_editor: apps.get_model("accounts", "User").objects.filter(location="Indore, Madhya Pradesh").update(location="Karnataka"),
-            reverse_code=migrations.RunPython.noop,
-        ),
-        migrations.RunPython(
-            code=lambda apps, schema_editor: apps.get_model("accounts", "User").objects.filter(mandi="Indore Grain Mandi").update(mandi=""),
-            reverse_code=migrations.RunPython.noop,
-        ),
+        migrations.RunPython(normalize_legacy_locations, reverse_legacy_locations),
     ]
