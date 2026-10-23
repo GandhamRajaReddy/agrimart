@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, Phone, MapPin, Sprout, Building, ArrowRight, CheckSquare, Square } from 'lucide-react';
+import { User, Phone, Sprout, Building, ArrowRight, CheckSquare, Square } from 'lucide-react';
 import { registerSchema } from '../schemas/authSchemas';
 import { useAuth } from '../hooks/useAuth';
 import AuthLayout from '../components/AuthLayout';
@@ -212,8 +212,6 @@ export const RegisterPage = () => {
             }} placeholder="Type at least 2 letters to search" className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30" />
             <select value={selectedVillage || ''} disabled={!selectedTaluk || villageOptions.length === 0} onChange={(event) => {
               setValue('village', event.target.value, { shouldValidate: true });
-              const chosen = villageOptions.find((item) => item.name === event.target.value);
-              if (chosen?.pincode) setValue('villagePincode', chosen.pincode);
             }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
               <option value="" className="bg-emerald-900">{villageOptions.length ? 'Select village' : 'Search results appear here'}</option>
               {villageOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
@@ -233,7 +231,7 @@ export const RegisterPage = () => {
               <Input label="Land Size (Acres)" type="number" step="0.5" placeholder="e.g. 5.5" error={errors.landAreaAcres?.message} {...register('landAreaAcres')} />
               <Input label="Primary Crops Grown" placeholder="e.g. Wheat, Soybean, Cotton" error={errors.primaryCrop?.message} {...register('primaryCrop')} />
             </div>
-            <Input label="Nearest Mandi Hub" placeholder="e.g. Indore Grain Mandi" error={errors.mandi?.message} {...register('mandi')} />
+            <Input label="Nearest Mandi Hub" placeholder="Enter your nearest Karnataka mandi" error={errors.mandi?.message} {...register('mandi')} />
           </div>
         )}
 
