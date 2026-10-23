@@ -13,6 +13,20 @@ import {
   setError,
 } from '../authSlice';
 
+export const ROLE_HOME_PATHS = Object.freeze({
+  FARMER: '/farmer/dashboard',
+  BUYER: '/buyer/dashboard',
+  SELLER: '/vendor/dashboard',
+  EXPERT: '/expert/dashboard',
+  STAFF: '/staff/dashboard',
+  ADMIN: '/admin',
+});
+
+const normalizeRole = (role) => String(role || '').trim().toUpperCase();
+
+export const getRoleHomePath = (role) =>
+  ROLE_HOME_PATHS[normalizeRole(role)] || '/';
+
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -20,86 +34,81 @@ export const useAuth = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const pendingOTP = useSelector(selectPendingOTP);
 
-  // 1. Request OTP Mutation
+  const redirectAfterLogin = (user) => {
+    navigate(getRoleHomePath(user?.role), { replace: true });
+  };
+
   const requestOTPMutation = useMutation({
     mutationFn: ({ phone, role }) => authApi.requestOTP(phone, role),
     onSuccess: (data, variables) => {
-      dispatch(
-        setPendingOTP({
-          phone: variables.phone,
-          role: variables.role || 'Farmer',
-          refId: data.otpRefId,
-          demoOtp: data.demoOtp || '123456',
-        })
-      );
+      dispatch(setPendingOTP({
+        phone: variables.phone,
+        role: variables.role || 'Farmer',
+        refId: data.otpRefId,
+        demoOtp: data.demoOtp || null,
+      }));
     },
-    onError: (err) => {
-      dispatch(setError(err.message || 'Failed to send OTP'));
-    },
+    onError: (err) => dispatch(setError(err.message || 'Failed to send OTP')),
   });
 
-  // 2. Verify OTP Mutation
   const verifyOTPMutation = useMutation({
     mutationFn: (payload) => authApi.verifyOTP(payload),
     onSuccess: (data) => {
       if (data.token && data.user) {
-        dispatch(setCredentials({ user: data.user, token: data.token }));
+        dispatch(setCredentials({
+          user: data.user,
+          token: data.token,
+          refreshToken: data.refreshToken,
+        }));
         dispatch(clearPendingOTP());
-        navigate('/', { replace: true });
+        redirectAfterLogin(data.user);
       }
     },
-    onError: (err) => {
-      dispatch(setError(err.message || 'Invalid OTP code'));
-    },
+    onError: (err) => dispatch(setError(err.message || 'Invalid OTP code')),
   });
 
-  // 3. Login Mutation (Password / Email)
   const loginMutation = useMutation({
     mutationFn: (credentials) => authApi.loginWithPassword(credentials),
     onSuccess: (data) => {
       if (data.token && data.user) {
-        dispatch(setCredentials({ user: data.user, token: data.token }));
-        navigate('/', { replace: true });
+        dispatch(setCredentials({
+          user: data.user,
+          token: data.token,
+          refreshToken: data.refreshToken,
+        }));
+        redirectAfterLogin(data.user);
       }
     },
-    onError: (err) => {
-      dispatch(setError(err.message || 'Login failed'));
-    },
+    onError: (err) => dispatch(setError(err.message || 'Login failed')),
   });
 
-  // 4. Register Mutation
   const registerMutation = useMutation({
     mutationFn: (formData) => authApi.registerUser(formData),
     onSuccess: (data, formData) => {
       if (data.otpRequired) {
-        dispatch(
-          setPendingOTP({
-            phone: formData.phone,
-            role: formData.role,
-            profileData: formData,
-            demoOtp: data.demoOtp || '123456',
-            mode: 'register',
-          })
-        );
+        dispatch(setPendingOTP({
+          phone: formData.phone,
+          role: formData.role,
+          profileData: formData,
+          demoOtp: data.demoOtp || null,
+          mode: 'register',
+        }));
       }
     },
-    onError: (err) => {
-      dispatch(setError(err.message || 'Registration failed'));
-    },
+    onError: (err) => dispatch(setError(err.message || 'Registration failed')),
   });
 
-  // 5. Logout Handler
-  const handleLogout = () => {
-    authApi.logout();
+  const handleLogout = async () => {
+    await authApi.logout();
     dispatch(logoutAction());
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return {
     user: currentUser,
     isAuthenticated,
     pendingOTP,
-    
+
     requestOTP: (phone, role = 'Farmer') => requestOTPMutation.mutateAsync({ phone, role }),
     isRequestingOTP: requestOTPMutation.isPending,
     requestOTPError: requestOTPMutation.error,
