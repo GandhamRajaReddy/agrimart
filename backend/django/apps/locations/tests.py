@@ -58,3 +58,11 @@ class KarnatakaLocationsAPITests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual([row["name"] for row in response.data["results"]], ["Mysuru North"])
+
+    def test_mandi_endpoint_suggests_markets_for_selected_district(self):
+        response = self.client.get("/api/v1/locations/karnataka/", {
+            "level": "mandi", "district": "Mysuru", "taluk": "Hunsur",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["results"])
+        self.assertEqual(response.data["suggested"], "Hunsur APMC")
