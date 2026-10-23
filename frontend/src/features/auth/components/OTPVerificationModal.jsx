@@ -18,6 +18,15 @@ export const OTPVerificationModal = ({
 
   useEffect(() => {
     if (!isOpen) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && !isLoading) onClose?.();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, isLoading, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
     setOtpValues(['', '', '', '', '', '']);
     setResendTimer(30);
     setCanResend(false);
@@ -75,7 +84,12 @@ export const OTPVerificationModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-emerald-950/80 backdrop-blur-md animate-fadeIn">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-emerald-950/80 backdrop-blur-md animate-fadeIn"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !isLoading) onClose?.();
+      }}
+    >
       <div className="relative w-full max-w-md bg-emerald-900/90 border border-emerald-700/60 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-emerald-950/90">
         {onClose && (
           <button type="button" onClick={onClose} aria-label="Close OTP verification" className="absolute top-4 right-4 p-2 text-emerald-400 hover:text-white rounded-full bg-emerald-800/40 hover:bg-emerald-800/80 transition-colors">
