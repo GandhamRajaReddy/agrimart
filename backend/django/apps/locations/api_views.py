@@ -42,6 +42,7 @@ MANDIS_BY_DISTRICT = {
     "Uttara Kannada": ["Sirsi APMC", "Kumta APMC", "Haliyal APMC", "Siddapur APMC", "Yellapur APMC"],
     "Vijayanagara": ["Hospet APMC", "H.B. Halli APMC", "Kottur APMC", "Kudligi APMC"],
     "Vijayapura": ["Vijayapura APMC", "Talikot APMC", "Sindagi APMC"],
+    "Yadgir": ["Yadgir APMC", "Shahapur APMC", "Shorapur APMC"],
 }
 
 @lru_cache(maxsize=1)
