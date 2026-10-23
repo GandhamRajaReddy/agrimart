@@ -61,6 +61,8 @@ class RequestOTPSerializer(serializers.Serializer):
         return normalize_public_role(value)
 
     def validate(self, attrs):
+        if (attrs.get("state") or "Karnataka").strip().casefold() != "karnataka":
+            raise serializers.ValidationError({"state": "AgriMart is currently available only in Karnataka."})
         if any(attrs.get(key) for key in ("district", "taluk", "village")):
             validate_karnataka_location(attrs, require_village=bool(attrs.get("village")))
         return attrs
