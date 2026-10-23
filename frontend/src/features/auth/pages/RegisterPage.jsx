@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,12 +10,7 @@ import RoleSelectorCard from '../components/RoleSelectorCard';
 import OTPVerificationModal from '../components/OTPVerificationModal';
 import Input from '../../../components/common/Input';
 import Button from '../../../components/common/Button';
-
-const INDIAN_STATES = [
-  'Madhya Pradesh', 'Punjab', 'Haryana', 'Uttar Pradesh', 'Maharashtra',
-  'Rajasthan', 'Gujarat', 'Karnataka', 'Telangana', 'Andhra Pradesh',
-  'Tamil Nadu', 'Bihar', 'West Bengal',
-];
+import axiosClient from '../../../services/http/axiosClient';
 
 export const RegisterPage = () => {
   const {
@@ -23,6 +18,11 @@ export const RegisterPage = () => {
     verifyOTP, isVerifyingOTP, pendingOTP, requestOTP,
   } = useAuth();
   const [localError, setLocalError] = useState('');
+  const [districtOptions, setDistrictOptions] = useState([]);
+  const [talukOptions, setTalukOptions] = useState([]);
+  const [villageOptions, setVillageOptions] = useState([]);
+  const [villageSearch, setVillageSearch] = useState('');
+  const [locationError, setLocationError] = useState('');
 
   const {
     register,
@@ -37,9 +37,11 @@ export const RegisterPage = () => {
       fullName: '',
       phone: '',
       email: '',
-      state: 'Madhya Pradesh',
+      state: 'Karnataka',
       district: '',
-      mandi: 'Indore Grain Mandi',
+      taluk: '',
+      village: '',
+      mandi: '',
       landAreaAcres: 5,
       primaryCrop: 'Wheat & Soybean',
       companyName: '',
@@ -49,7 +51,47 @@ export const RegisterPage = () => {
   });
 
   const selectedRole = watch('role');
+  const selectedDistrict = watch('district');
+  const selectedTaluk = watch('taluk');
+  const selectedVillage = watch('village');
   const agreeToTerms = watch('agreeToTerms');
+
+  useEffect(() => {
+    let active = true;
+    axiosClient.get('/locations/karnataka/', { params: { level: 'district' } })
+      .then(({ data }) => { if (active) setDistrictOptions(data.results || []); })
+      .catch(() => { if (active) setLocationError('Could not load Karnataka districts. Check that the backend is running.'); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDistrict) { setTalukOptions([]); return undefined; }
+    let active = true;
+    axiosClient.get('/locations/karnataka/', { params: { level: 'taluk', district: selectedDistrict } })
+      .then(({ data }) => { if (active) setTalukOptions(data.results || []); })
+      .catch(() => { if (active) setLocationError('Could not load taluks for this district.'); });
+    return () => { active = false; };
+  }, [selectedDistrict]);
+
+  useEffect(() => {
+    if (!selectedDistrict || !selectedTaluk || villageSearch.trim().length < 2) {
+      setVillageOptions([]);
+      return undefined;
+    }
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      axiosClient.get('/locations/karnataka/', { params: {
+        level: 'village', district: selectedDistrict, taluk: selectedTaluk, search: villageSearch.trim(),
+      } }).then(({ data }) => {
+        if (active) {
+          setVillageOptions(data.results || []);
+          if (data.data_ready === false) setLocationError('Village data is not installed yet. Run python manage.py sync_karnataka_locations in backend/django.');
+          else setLocationError('');
+        }
+      }).catch(() => { if (active) setLocationError('Could not search villages. Please try again.'); });
+    }, 250);
+    return () => { active = false; window.clearTimeout(timeout); };
+  }, [selectedDistrict, selectedTaluk, villageSearch]);
 
   const onFormSubmit = async (data) => {
     setLocalError('');
@@ -129,27 +171,58 @@ export const RegisterPage = () => {
           {...register('email')}
         />
 
+        <input type="hidden" {...register('state')} value="Karnataka" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="block text-sm font-semibold text-emerald-200">State</label>
-            <select
-              {...register('state')}
-              className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
-            >
-              {INDIAN_STATES.map((state) => (
-                <option key={state} value={state} className="bg-emerald-900 text-white">{state}</option>
-              ))}
-            </select>
-            {errors.state?.message && <p className="text-xs text-red-400">{errors.state.message}</p>}
+            <div className="flex h-11 items-center rounded-xl border border-emerald-800/60 bg-emerald-950/60 px-3.5 text-sm text-white">Karnataka</div>
           </div>
-          <Input
-            label="District / Location"
-            placeholder="e.g. Indore, Ujjain, Dewas"
-            leftIcon={<MapPin className="w-4 h-4" />}
-            error={errors.district?.message}
-            {...register('district')}
-          />
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-emerald-200">District</label>
+            <select value={selectedDistrict || ''} onChange={(event) => {
+              setValue('district', event.target.value, { shouldValidate: true });
+              setValue('taluk', '', { shouldValidate: true });
+              setValue('village', '', { shouldValidate: true });
+              setVillageSearch('');
+              setVillageOptions([]);
+            }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
+              <option value="" className="bg-emerald-900">Select district</option>
+              {districtOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+            </select>
+            {errors.district?.message && <p className="text-xs text-red-400">{errors.district.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-emerald-200">Taluk</label>
+            <select value={selectedTaluk || ''} disabled={!selectedDistrict} onChange={(event) => {
+              setValue('taluk', event.target.value, { shouldValidate: true });
+              setValue('village', '', { shouldValidate: true });
+              setVillageSearch('');
+              setVillageOptions([]);
+            }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
+              <option value="" className="bg-emerald-900">Select taluk</option>
+              {talukOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+            </select>
+            {errors.taluk?.message && <p className="text-xs text-red-400">{errors.taluk.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-emerald-200">Village</label>
+            <input value={villageSearch} disabled={!selectedTaluk} onChange={(event) => {
+              setVillageSearch(event.target.value);
+              setValue('village', '', { shouldValidate: true });
+            }} placeholder="Type at least 2 letters to search" className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30" />
+            <select value={selectedVillage || ''} disabled={!selectedTaluk || villageOptions.length === 0} onChange={(event) => {
+              setValue('village', event.target.value, { shouldValidate: true });
+              const chosen = villageOptions.find((item) => item.name === event.target.value);
+              if (chosen?.pincode) setValue('villagePincode', chosen.pincode);
+            }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
+              <option value="" className="bg-emerald-900">{villageOptions.length ? 'Select village' : 'Search results appear here'}</option>
+              {villageOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+            </select>
+            {errors.village?.message && <p className="text-xs text-red-400">{errors.village.message}</p>}
+            {villageSearch.trim().length >= 2 && villageOptions.length === 0 && !locationError && <p className="text-xs text-emerald-200/70">No matching villages found for this taluk.</p>}
+          </div>
         </div>
+        {locationError && <p role="status" className="text-xs text-amber-300">{locationError}</p>}
 
         {selectedRole === 'Farmer' && (
           <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 space-y-4">
