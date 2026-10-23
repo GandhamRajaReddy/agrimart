@@ -40,6 +40,8 @@ export const registerSchema = z.object({
   }),
   fullName: z.string().min(2, 'Full Name must be at least 2 characters long'),
   phone: phoneSchema,
+  password: z.string().min(8, 'Password must be at least 8 characters long'),
+  confirmPassword: z.string().min(8, 'Please confirm your password'),
   email: z.string().email('Invalid email address').or(z.literal('')).optional(),
   state: z.string().min(1, 'Please select your State'),
   district: z.string().min(1, 'Please select your Karnataka district'),
@@ -56,4 +58,7 @@ export const registerSchema = z.object({
   agreeToTerms: z.boolean().refine(val => val === true, {
     message: 'You must accept the terms and privacy policy',
   }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
