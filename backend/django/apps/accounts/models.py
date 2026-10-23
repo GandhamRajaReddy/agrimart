@@ -66,7 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 class OTPVerification(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone = models.CharField(max_length=20, db_index=True)
-    otp_code = models.CharField(max_length=10, default="123456")
+    otp_code = models.CharField(max_length=10)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     is_verified = models.BooleanField(default=False)
