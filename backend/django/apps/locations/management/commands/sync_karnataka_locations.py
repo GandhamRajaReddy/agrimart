@@ -35,12 +35,27 @@ class Command(BaseCommand):
                 "The source CSV schema changed; expected District, Mandal, Village, Village Code."
             )
 
+        regions_path = DATA_DIR / "karnataka_regions.json"
+        regions = json.loads(regions_path.read_text(encoding="utf-8"))
+        districts_by_code = {str(item["code"]): item for item in regions["districts"]}
+        taluks_by_code = {str(item["code"]): item for item in regions["taluks"]}
+
         villages = []
         seen = set()
         for row in reader:
             name = (row.get("Village") or "").strip()
-            district = (row.get("District") or "").strip()
-            taluk = (row.get("Mandal") or "").strip()
+            source_district = (row.get("District") or "").strip()
+            source_taluk = (row.get("Mandal") or "").strip()
+            district_code = (row.get("District Code") or "").strip()
+            taluk_code = (row.get("Mandal Code") or "").strip()
+            taluk_row = taluks_by_code.get(taluk_code)
+            district_row = districts_by_code.get(district_code)
+            if taluk_row:
+                district = taluk_row["district"]
+                taluk = taluk_row["name"]
+            else:
+                district = district_row["name"] if district_row else source_district
+                taluk = source_taluk
             code = (row.get("Village Code") or "").strip()
             if not name or not district or not taluk or not code:
                 continue
