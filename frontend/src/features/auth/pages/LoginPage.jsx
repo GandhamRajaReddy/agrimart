@@ -53,15 +53,14 @@ export const LoginPage = () => {
         />
 
         <Input
-            label="Password"
-            type="password"
-            placeholder="Enter your account password"
-            leftIcon={<Lock className="w-4 h-4" />}
-            error={errors.password?.message}
-            autoComplete="current-password"
-            {...register('password')}
+          label="Password"
+          type="password"
+          placeholder="Enter your account password"
+          leftIcon={<Lock className="w-4 h-4" />}
+          error={errors.password?.message}
+          autoComplete="current-password"
+          {...register('password')}
           />
-        )}
 
         {(localError || loginError) && (
           <div role="alert" className="p-3 rounded-xl bg-red-950/60 border border-red-800/60 text-xs text-red-300">
