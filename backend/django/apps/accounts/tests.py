@@ -1,4 +1,5 @@
 from django.test import TestCase
+from unittest.mock import patch
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -53,6 +54,36 @@ class AuthenticationSecurityTests(TestCase):
         )
         self.assertFalse(serializer.is_valid())
         self.assertIn("role", serializer.errors)
+
+    @patch("apps.accounts.serializers.validate_karnataka_location")
+    def test_registration_creates_password_account_without_otp(self, validate_location):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "full_name": "New Farmer",
+                "phone": "9988776655",
+                "email": "newfarmer@example.com",
+                "password": "StrongPass123!",
+                "role": "Farmer",
+                "state": "Karnataka",
+                "district": "Mysuru",
+                "taluk": "Hunsur",
+                "village": "Example Village",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIn("token", response.data)
+        self.assertIn("refresh_token", response.data)
+        self.assertNotIn("password", response.data)
+        user = User.objects.get(phone="9988776655")
+        self.assertTrue(user.check_password("StrongPass123!"))
+        self.assertFalse(OTPVerification.objects.filter(phone="9988776655").exists())
+
+    def test_registration_rejects_short_password(self):
+        serializer = RegisterSerializer(data={"password": "short"})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("password", serializer.errors)
 
     def test_fixed_demo_otp_cannot_authenticate_without_a_saved_code(self):
         response = self.client.post(
