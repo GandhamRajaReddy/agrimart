@@ -1,5 +1,6 @@
 from django.urls import path
 from .health import health_check, readiness_check
+from apps.locations.api_views import KarnatakaLocationsView
 from apps.accounts.api_views import (
     RequestOTPView,
     VerifyOTPView,
@@ -26,6 +27,9 @@ from apps.orders.api_views import (
 )
 
 urlpatterns = [
+    # Karnataka-only administrative locations
+    path("locations/karnataka/", KarnatakaLocationsView.as_view(), name="karnataka-locations"),
+
     # Health check
     path("health/", health_check, name="health"),
     path("ready/", readiness_check, name="ready"),

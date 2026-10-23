@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, Phone, MapPin, Sprout, Building, ArrowRight, CheckSquare, Square } from 'lucide-react';
+import { User, Phone, Sprout, Building, ArrowRight, CheckSquare, Square } from 'lucide-react';
 import { registerSchema } from '../schemas/authSchemas';
 import { useAuth } from '../hooks/useAuth';
 import AuthLayout from '../components/AuthLayout';
@@ -10,12 +10,7 @@ import RoleSelectorCard from '../components/RoleSelectorCard';
 import OTPVerificationModal from '../components/OTPVerificationModal';
 import Input from '../../../components/common/Input';
 import Button from '../../../components/common/Button';
-
-const INDIAN_STATES = [
-  'Madhya Pradesh', 'Punjab', 'Haryana', 'Uttar Pradesh', 'Maharashtra',
-  'Rajasthan', 'Gujarat', 'Karnataka', 'Telangana', 'Andhra Pradesh',
-  'Tamil Nadu', 'Bihar', 'West Bengal',
-];
+import axiosClient from '../../../services/http/axiosClient';
 
 export const RegisterPage = () => {
   const {
@@ -23,6 +18,11 @@ export const RegisterPage = () => {
     verifyOTP, isVerifyingOTP, pendingOTP, requestOTP,
   } = useAuth();
   const [localError, setLocalError] = useState('');
+  const [districtOptions, setDistrictOptions] = useState([]);
+  const [talukOptions, setTalukOptions] = useState([]);
+  const [villageOptions, setVillageOptions] = useState([]);
+  const [mandiOptions, setMandiOptions] = useState([]);
+  const [locationError, setLocationError] = useState('');
 
   const {
     register,
@@ -37,9 +37,11 @@ export const RegisterPage = () => {
       fullName: '',
       phone: '',
       email: '',
-      state: 'Madhya Pradesh',
+      state: 'Karnataka',
       district: '',
-      mandi: 'Indore Grain Mandi',
+      taluk: '',
+      village: '',
+      mandi: '',
       landAreaAcres: 5,
       primaryCrop: 'Wheat & Soybean',
       companyName: '',
@@ -49,7 +51,69 @@ export const RegisterPage = () => {
   });
 
   const selectedRole = watch('role');
+  const selectedDistrict = watch('district');
+  const selectedTaluk = watch('taluk');
+  const selectedVillage = watch('village');
   const agreeToTerms = watch('agreeToTerms');
+
+  useEffect(() => {
+    let active = true;
+    axiosClient.get('/locations/karnataka/', { params: { level: 'district' } })
+      .then(({ data }) => { if (active) setDistrictOptions(data.results || []); })
+      .catch(() => { if (active) setLocationError('Could not load Karnataka districts. Check that the backend is running.'); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDistrict) { setTalukOptions([]); return undefined; }
+    let active = true;
+    axiosClient.get('/locations/karnataka/', { params: { level: 'taluk', district: selectedDistrict } })
+      .then(({ data }) => { if (active) setTalukOptions(data.results || []); })
+      .catch(() => { if (active) setLocationError('Could not load taluks for this district.'); });
+    return () => { active = false; };
+  }, [selectedDistrict]);
+
+  useEffect(() => {
+    if (!selectedDistrict || !selectedTaluk) {
+      setVillageOptions([]);
+      return undefined;
+    }
+    let active = true;
+    setVillageOptions([]);
+    axiosClient.get('/locations/karnataka/', { params: {
+      level: 'village', district: selectedDistrict, taluk: selectedTaluk,
+    } }).then(({ data }) => {
+      if (active) {
+        setVillageOptions(data.results || []);
+        if (data.data_ready === false) setLocationError('Village data is not installed yet. Run python manage.py sync_karnataka_locations in backend/django.');
+        else setLocationError('');
+      }
+    }).catch(() => { if (active) setLocationError('Could not load villages for this taluk. Please try again.'); });
+    return () => { active = false; };
+  }, [selectedDistrict, selectedTaluk]);
+
+  useEffect(() => {
+    if (selectedRole !== 'Farmer' || !selectedDistrict || !selectedVillage) {
+      setMandiOptions([]);
+      setValue('mandi', '', { shouldValidate: true });
+      return undefined;
+    }
+    let active = true;
+    axiosClient.get('/locations/karnataka/', { params: {
+      level: 'mandi', district: selectedDistrict, taluk: selectedTaluk,
+    } }).then(({ data }) => {
+      if (!active) return;
+      setMandiOptions(data.results || []);
+      setValue('mandi', data.suggested || '', { shouldValidate: true });
+    }).catch(() => {
+      if (active) {
+        setMandiOptions([]);
+        setValue('mandi', '', { shouldValidate: true });
+        setLocationError('Could not suggest a mandi. You can choose one manually if available.');
+      }
+    });
+    return () => { active = false; };
+  }, [selectedRole, selectedDistrict, selectedTaluk, selectedVillage, setValue]);
 
   const onFormSubmit = async (data) => {
     setLocalError('');
@@ -129,27 +193,51 @@ export const RegisterPage = () => {
           {...register('email')}
         />
 
+        <input type="hidden" {...register('state')} value="Karnataka" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="block text-sm font-semibold text-emerald-200">State</label>
-            <select
-              {...register('state')}
-              className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
-            >
-              {INDIAN_STATES.map((state) => (
-                <option key={state} value={state} className="bg-emerald-900 text-white">{state}</option>
-              ))}
-            </select>
-            {errors.state?.message && <p className="text-xs text-red-400">{errors.state.message}</p>}
+            <div className="flex h-11 items-center rounded-xl border border-emerald-800/60 bg-emerald-950/60 px-3.5 text-sm text-white">Karnataka</div>
           </div>
-          <Input
-            label="District / Location"
-            placeholder="e.g. Indore, Ujjain, Dewas"
-            leftIcon={<MapPin className="w-4 h-4" />}
-            error={errors.district?.message}
-            {...register('district')}
-          />
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-emerald-200">District</label>
+            <select value={selectedDistrict || ''} onChange={(event) => {
+              setValue('district', event.target.value, { shouldValidate: true });
+              setValue('taluk', '', { shouldValidate: true });
+              setValue('village', '', { shouldValidate: true });
+              setVillageOptions([]);
+            }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
+              <option value="" className="bg-emerald-900">Select district</option>
+              {districtOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+            </select>
+            {errors.district?.message && <p className="text-xs text-red-400">{errors.district.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-emerald-200">Taluk</label>
+            <select value={selectedTaluk || ''} disabled={!selectedDistrict} onChange={(event) => {
+              setValue('taluk', event.target.value, { shouldValidate: true });
+              setValue('village', '', { shouldValidate: true });
+              setVillageSearch('');
+              setVillageOptions([]);
+            }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
+              <option value="" className="bg-emerald-900">Select taluk</option>
+              {talukOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+            </select>
+            {errors.taluk?.message && <p className="text-xs text-red-400">{errors.taluk.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-emerald-200">Village</label>
+            <select value={selectedVillage || ''} disabled={!selectedTaluk || villageOptions.length === 0} onChange={(event) => {
+              setValue('village', event.target.value, { shouldValidate: true });
+            }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
+              <option value="" className="bg-emerald-900">{villageOptions.length ? 'Select village' : 'Loading or no villages available'}</option>
+              {villageOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+            </select>
+            {errors.village?.message && <p className="text-xs text-red-400">{errors.village.message}</p>}
+            {villageOptions.length > 0 && <p className="text-xs text-emerald-200/70">Select your village from the list. Type its first letters while the dropdown is open to jump to it.</p>}
+          </div>
         </div>
+        {locationError && <p role="status" className="text-xs text-amber-300">{locationError}</p>}
 
         {selectedRole === 'Farmer' && (
           <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 space-y-4">
@@ -160,7 +248,15 @@ export const RegisterPage = () => {
               <Input label="Land Size (Acres)" type="number" step="0.5" placeholder="e.g. 5.5" error={errors.landAreaAcres?.message} {...register('landAreaAcres')} />
               <Input label="Primary Crops Grown" placeholder="e.g. Wheat, Soybean, Cotton" error={errors.primaryCrop?.message} {...register('primaryCrop')} />
             </div>
-            <Input label="Nearest Mandi Hub" placeholder="e.g. Indore Grain Mandi" error={errors.mandi?.message} {...register('mandi')} />
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-emerald-200">Suggested Nearby Mandi</label>
+              <select value={watch('mandi') || ''} onChange={(event) => setValue('mandi', event.target.value, { shouldValidate: true })} disabled={!selectedVillage || mandiOptions.length === 0} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
+                <option value="" className="bg-emerald-900">{selectedVillage ? 'No mandi suggestions available' : 'Select your village first'}</option>
+                {mandiOptions.map((item) => <option key={item.name} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+              </select>
+              <p className="text-xs text-emerald-200/70">Suggested from your district and taluk. Please confirm the nearest market for your village.</p>
+              {errors.mandi?.message && <p className="text-xs text-red-400">{errors.mandi.message}</p>}
+            </div>
           </div>
         )}
 

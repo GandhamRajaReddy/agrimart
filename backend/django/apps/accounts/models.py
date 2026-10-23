@@ -33,12 +33,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         db_index=True,
     )
 
-    location = models.CharField(
-        max_length=255,
-        blank=True,
-        default="Indore, Madhya Pradesh",
-    )
-    mandi = models.CharField(max_length=255, blank=True, default="Indore Grain Mandi")
+    location = models.CharField(max_length=255, blank=True, default="Karnataka")
+    district = models.CharField(max_length=100, blank=True, default="")
+    taluk = models.CharField(max_length=100, blank=True, default="")
+    village = models.CharField(max_length=150, blank=True, default="")
+    mandi = models.CharField(max_length=255, blank=True, default="")
     land_area_acres = models.FloatField(default=5.0, blank=True, null=True)
     primary_crops = models.CharField(max_length=255, blank=True, default="Wheat & Soybean")
     company_name = models.CharField(max_length=255, blank=True, default="")

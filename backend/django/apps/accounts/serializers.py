@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from apps.locations.services import validate_karnataka_location
 
 User = get_user_model()
 
@@ -39,6 +40,9 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "role",
             "location",
+            "district",
+            "taluk",
+            "village",
             "mandi",
             "land_area_acres",
             "primary_crops",
@@ -56,6 +60,13 @@ class RequestOTPSerializer(serializers.Serializer):
     def validate_role(self, value):
         return normalize_public_role(value)
 
+    def validate(self, attrs):
+        if (attrs.get("state") or "Karnataka").strip().casefold() != "karnataka":
+            raise serializers.ValidationError({"state": "AgriMart is currently available only in Karnataka."})
+        if any(attrs.get(key) for key in ("district", "taluk", "village")):
+            validate_karnataka_location(attrs, require_village=bool(attrs.get("village")))
+        return attrs
+
 
 class VerifyOTPSerializer(serializers.Serializer):
     phone = serializers.CharField(required=True, max_length=20)
@@ -63,8 +74,10 @@ class VerifyOTPSerializer(serializers.Serializer):
     role = serializers.CharField(required=False, default="FARMER")
     full_name = serializers.CharField(required=False, allow_blank=True, max_length=200)
     email = serializers.EmailField(required=False, allow_blank=True)
-    state = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    state = serializers.CharField(required=False, default="Karnataka", max_length=100)
     district = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    taluk = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    village = serializers.CharField(required=False, allow_blank=True, max_length=150)
     mandi = serializers.CharField(required=False, allow_blank=True, max_length=255)
     company_name = serializers.CharField(required=False, allow_blank=True, max_length=255)
     gstin = serializers.CharField(required=False, allow_blank=True, max_length=50)
@@ -73,6 +86,11 @@ class VerifyOTPSerializer(serializers.Serializer):
 
     def validate_role(self, value):
         return normalize_public_role(value)
+
+    def validate(self, attrs):
+        if any(attrs.get(key) for key in ("district", "taluk", "village")):
+            validate_karnataka_location(attrs, require_village=bool(attrs.get("village")))
+        return attrs
 
 
 class LoginSerializer(serializers.Serializer):
@@ -85,8 +103,10 @@ class RegisterSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=True, max_length=200)
     phone = serializers.CharField(required=True, max_length=20)
     email = serializers.EmailField(required=False, allow_blank=True)
-    state = serializers.CharField(required=False, allow_blank=True, max_length=100)
-    district = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    state = serializers.CharField(required=False, default="Karnataka", max_length=100)
+    district = serializers.CharField(required=True, max_length=100)
+    taluk = serializers.CharField(required=True, max_length=100)
+    village = serializers.CharField(required=True, max_length=150)
     mandi = serializers.CharField(required=False, allow_blank=True, max_length=255)
     land_area_acres = serializers.FloatField(required=False, default=5.0, min_value=0)
     primary_crop = serializers.CharField(required=False, allow_blank=True, max_length=255)
@@ -95,3 +115,7 @@ class RegisterSerializer(serializers.Serializer):
 
     def validate_role(self, value):
         return normalize_public_role(value)
+
+    def validate(self, attrs):
+        validate_karnataka_location(attrs, require_village=True)
+        return attrs

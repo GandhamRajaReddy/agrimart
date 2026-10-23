@@ -42,7 +42,9 @@ export const registerSchema = z.object({
   phone: phoneSchema,
   email: z.string().email('Invalid email address').or(z.literal('')).optional(),
   state: z.string().min(1, 'Please select your State'),
-  district: z.string().min(1, 'Please enter your District / Location'),
+  district: z.string().min(1, 'Please select your Karnataka district'),
+  taluk: z.string().min(1, 'Please select your taluk'),
+  village: z.string().min(1, 'Please search for and select your village'),
   
   // Role-specific fields
   mandi: z.string().optional(),
