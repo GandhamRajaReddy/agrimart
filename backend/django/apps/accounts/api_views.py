@@ -128,9 +128,11 @@ class VerifyOTPView(APIView):
             email = f"user_{phone}@agrimart.in"
 
         role = data["role"]
-        state = data.get("state") or "Madhya Pradesh"
-        district = data.get("district") or "Indore"
-        location = f"{district}, {state}" if district else state
+        state = data.get("state") or "Karnataka"
+        district = data.get("district") or ""
+        taluk = data.get("taluk") or ""
+        village = data.get("village") or ""
+        location = ", ".join(part for part in (village, taluk, district, state) if part)
 
         try:
             with transaction.atomic():
@@ -148,7 +150,10 @@ class VerifyOTPView(APIView):
                         first_name=full_name[:100],
                         role=role,
                         location=location,
-                        mandi=data.get("mandi") or "Indore Grain Mandi",
+                        district=district,
+                        taluk=taluk,
+                        village=village,
+                        mandi=data.get("mandi") or "Karnataka Mandi",
                         land_area_acres=data.get("land_area_acres", 5.0),
                         primary_crops=data.get("primary_crop") or "Wheat & Soybean",
                         company_name=data.get("company_name") or "",
