@@ -153,7 +153,7 @@ class VerifyOTPView(APIView):
                         district=district,
                         taluk=taluk,
                         village=village,
-                        mandi=data.get("mandi") or "Karnataka Mandi",
+                        mandi=data.get("mandi") or "",
                         land_area_acres=data.get("land_area_acres", 5.0),
                         primary_crops=data.get("primary_crop") or "Wheat & Soybean",
                         company_name=data.get("company_name") or "",
