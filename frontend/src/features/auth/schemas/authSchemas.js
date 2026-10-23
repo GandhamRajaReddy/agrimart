@@ -18,7 +18,10 @@ export const loginSchema = z.object({
   phoneOrEmail: z.string().min(1, 'Phone number or email is required').refine((val) => {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
     const cleanedPhone = val.replace(/\D/g, '');
-    const isPhone = cleanedPhone.length === 10 && /^[6-9]/.test(cleanedPhone);
+    const normalizedPhone = cleanedPhone.length === 12 && cleanedPhone.startsWith('91')
+      ? cleanedPhone.slice(2)
+      : cleanedPhone;
+    const isPhone = normalizedPhone.length === 10 && /^[6-9]/.test(normalizedPhone);
     return isEmail || isPhone;
   }, {
     message: 'Enter a valid 10-digit mobile number or email address',
