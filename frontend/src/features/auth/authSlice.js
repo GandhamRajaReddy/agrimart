@@ -4,24 +4,22 @@ const getInitialUser = () => {
   try {
     const savedUser = localStorage.getItem('agrimart_user');
     if (savedUser) return JSON.parse(savedUser);
-  } catch (e) {
-    console.error('Failed to parse saved user state:', e);
+  } catch (error) {
+    console.error('Failed to parse saved user state:', error);
   }
   return null;
 };
 
-const getInitialToken = () => {
-  return localStorage.getItem('agrimart_token') || null;
-};
-
 const initialUser = getInitialUser();
-const initialToken = getInitialToken();
+const initialToken = localStorage.getItem('agrimart_token') || null;
+const initialRefreshToken = localStorage.getItem('agrimart_refresh_token') || null;
 
 const initialState = {
   user: initialUser,
   token: initialToken,
+  refreshToken: initialRefreshToken,
   isAuthenticated: !!(initialUser && initialToken),
-  pendingOTP: null, // { phone, role, mode: 'login' | 'register', profileData, demoOtp }
+  pendingOTP: null,
   isLoading: false,
   error: null,
   language: 'English',
@@ -32,14 +30,18 @@ export const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, action) => {
-      const { user, token } = action.payload;
+      const { user, token, refreshToken } = action.payload;
       state.user = user;
       state.token = token;
-      state.isAuthenticated = true;
+      if (refreshToken) state.refreshToken = refreshToken;
+      state.isAuthenticated = !!(user && token);
       state.pendingOTP = null;
       state.error = null;
 
       if (token) localStorage.setItem('agrimart_token', token);
+      if (refreshToken) {
+        localStorage.setItem('agrimart_refresh_token', refreshToken);
+      }
       if (user) localStorage.setItem('agrimart_user', JSON.stringify(user));
     },
 
@@ -53,9 +55,7 @@ export const authSlice = createSlice({
 
     updateUser: (state, action) => {
       state.user = { ...state.user, ...action.payload };
-      if (state.user) {
-        localStorage.setItem('agrimart_user', JSON.stringify(state.user));
-      }
+      if (state.user) localStorage.setItem('agrimart_user', JSON.stringify(state.user));
     },
 
     setLanguage: (state, action) => {
@@ -73,10 +73,12 @@ export const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
+      state.refreshToken = null;
       state.isAuthenticated = false;
       state.pendingOTP = null;
       state.error = null;
       localStorage.removeItem('agrimart_token');
+      localStorage.removeItem('agrimart_refresh_token');
       localStorage.removeItem('agrimart_user');
     },
   },
