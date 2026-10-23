@@ -28,9 +28,10 @@ def get_tokens_for_user(user):
 
 
 def normalize_phone(value):
-    phone = "".join(str(value).split()).replace("-", "")
-    if phone.startswith("+91"):
-        phone = phone[3:]
+    # Normalize common user-entered formats such as +91 98765-43210.
+    phone = "".join(character for character in str(value) if character.isdigit())
+    if len(phone) == 12 and phone.startswith("91"):
+        phone = phone[2:]
     return phone
 
 
