@@ -7,7 +7,6 @@ import { registerSchema } from '../schemas/authSchemas';
 import { useAuth } from '../hooks/useAuth';
 import AuthLayout from '../components/AuthLayout';
 import RoleSelectorCard from '../components/RoleSelectorCard';
-import OTPVerificationModal from '../components/OTPVerificationModal';
 import Input from '../../../components/common/Input';
 import Button from '../../../components/common/Button';
 import axiosClient from '../../../services/http/axiosClient';
@@ -15,7 +14,6 @@ import axiosClient from '../../../services/http/axiosClient';
 export const RegisterPage = () => {
   const {
     register: registerUser, isRegistering, registerError,
-    verifyOTP, isVerifyingOTP, pendingOTP, requestOTP, cancelOTP,
   } = useAuth();
   const [localError, setLocalError] = useState('');
   const [districtOptions, setDistrictOptions] = useState([]);
@@ -124,34 +122,6 @@ export const RegisterPage = () => {
     }
   };
 
-  const handleVerifyOTP = async (otpCode) => {
-    if (!pendingOTP?.phone) return;
-    setLocalError('');
-    try {
-      await verifyOTP({
-        phone: pendingOTP.phone,
-        otp: otpCode,
-        role: pendingOTP.role,
-        profileData: pendingOTP.profileData,
-      });
-    } catch (err) {
-      setLocalError(err.response?.data?.detail || err.response?.data?.message || err.message || 'Invalid or expired OTP code.');
-    }
-  };
-
-  const handleResendOTP = async () => {
-    if (!pendingOTP?.phone) return;
-    setLocalError('');
-    try {
-      if (pendingOTP.mode === 'register' && pendingOTP.profileData) {
-        await registerUser(pendingOTP.profileData);
-      } else {
-        await requestOTP(pendingOTP.phone, pendingOTP.role || 'Farmer');
-      }
-    } catch (err) {
-      setLocalError(err.response?.data?.detail || err.response?.data?.message || err.message || 'Failed to resend OTP.');
-    }
-  };
 
   return (
     <AuthLayout
@@ -213,6 +183,8 @@ export const RegisterPage = () => {
             {...register('confirmPassword')}
           />
         </div>
+
+        <p className="text-xs text-emerald-200/70">Create a password to register. No SMS or OTP is required.</p>
 
         <input type="hidden" {...register('state')} value="Karnataka" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -320,15 +292,6 @@ export const RegisterPage = () => {
         Already have an account? <Link to="/login" className="text-emerald-400 font-bold hover:underline">Sign In</Link>
       </div>
 
-      <OTPVerificationModal
-        isOpen={!!pendingOTP && pendingOTP.mode === 'register'}
-        onClose={cancelOTP}
-        phone={pendingOTP?.phone || watch('phone')}
-        onVerify={handleVerifyOTP}
-        onResend={handleResendOTP}
-        isLoading={isVerifyingOTP}
-        error={localError}
-      />
     </AuthLayout>
   );
 };
