@@ -1,8 +1,10 @@
 import uuid
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
-from datetime import timedelta
+
 from .managers import UserManager
 
 
@@ -17,38 +19,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         STAFF = "STAFF", "Staff"
         ADMIN = "ADMIN", "Administrator"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    email = models.EmailField(
-        unique=True,
-        db_index=True,
-        null=True,
-        blank=True,
-    )
-
-    phone = models.CharField(
-        max_length=20,
-        unique=True,
-        db_index=True,
-        null=True,
-        blank=True,
-    )
-
-    first_name = models.CharField(
-        max_length=100,
-        blank=True,
-        default="",
-    )
-
-    last_name = models.CharField(
-        max_length=100,
-        blank=True,
-        default="",
-    )
+    email = models.EmailField(unique=True, db_index=True, null=True, blank=True)
+    phone = models.CharField(max_length=20, unique=True, db_index=True, null=True, blank=True)
+    first_name = models.CharField(max_length=100, blank=True, default="")
+    last_name = models.CharField(max_length=100, blank=True, default="")
 
     role = models.CharField(
         max_length=20,
@@ -62,56 +38,18 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
         default="Indore, Madhya Pradesh",
     )
+    mandi = models.CharField(max_length=255, blank=True, default="Indore Grain Mandi")
+    land_area_acres = models.FloatField(default=5.0, blank=True, null=True)
+    primary_crops = models.CharField(max_length=255, blank=True, default="Wheat & Soybean")
+    company_name = models.CharField(max_length=255, blank=True, default="")
+    gstin = models.CharField(max_length=50, blank=True, default="")
 
-    mandi = models.CharField(
-        max_length=255,
-        blank=True,
-        default="Indore Grain Mandi",
-    )
+    is_verified = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
-    land_area_acres = models.FloatField(
-        default=5.0,
-        blank=True,
-        null=True,
-    )
-
-    primary_crops = models.CharField(
-        max_length=255,
-        blank=True,
-        default="Wheat & Soybean",
-    )
-
-    company_name = models.CharField(
-        max_length=255,
-        blank=True,
-        default="",
-    )
-
-    gstin = models.CharField(
-        max_length=50,
-        blank=True,
-        default="",
-    )
-
-    is_verified = models.BooleanField(
-        default=True,
-    )
-
-    is_active = models.BooleanField(
-        default=True,
-    )
-
-    is_staff = models.BooleanField(
-        default=False,
-    )
-
-    date_joined = models.DateTimeField(
-        auto_now_add=True,
-    )
-
-    updated_at = models.DateTimeField(
-        auto_now=True,
-    )
+    date_joined = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -142,4 +80,5 @@ class OTPVerification(models.Model):
         return not self.is_verified and timezone.now() <= self.expires_at
 
     def __str__(self):
-        return f"OTP for {self.phone}: {self.otp_code}"
+        # Never put the OTP itself in logs or admin/debug output.
+        return f"OTP verification for {self.phone}"
