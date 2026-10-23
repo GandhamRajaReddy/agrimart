@@ -1,19 +1,27 @@
 import axiosClient from '../../../services/http/axiosClient';
 
+const getAuthPayload = (data) => ({
+  success: data.success ?? true,
+  token: data.token || data.access || null,
+  refreshToken: data.refresh_token || data.refresh || null,
+  user: data.user || null,
+  message: data.message || '',
+});
+
 export const authApi = {
-  // 1. Request OTP for login or registration
+  // OTP endpoints are development-only until an SMS provider is configured.
   requestOTP: async (phone, role = 'Farmer') => {
     const response = await axiosClient.post('/auth/request-otp/', { phone, role });
     const data = response.data;
     return {
       success: data.success ?? true,
-      message: data.message,
-      otpRefId: data.otp_ref_id || data.otpRefId,
-      demoOtp: data.demo_otp || data.demoOtp || '123456',
+      message: data.message || '',
+      otpRefId: data.otp_ref_id || data.otpRefId || null,
+      // Never invent a fallback OTP. Only the backend may return a dev OTP.
+      demoOtp: data.demo_otp || data.demoOtp || null,
     };
   },
 
-  // 2. Verify OTP and authenticate / register
   verifyOTP: async ({ phone, otp, role, profileData }) => {
     const response = await axiosClient.post('/auth/verify-otp/', {
       phone,
@@ -24,33 +32,28 @@ export const authApi = {
       state: profileData?.state,
       district: profileData?.district,
       mandi: profileData?.mandi,
-      ...profileData,
+      land_area_acres: profileData?.landAreaAcres,
+      primary_crop: profileData?.primaryCrop,
+      company_name: profileData?.companyName,
+      gstin: profileData?.gstin,
     });
-    const data = response.data;
     return {
-      success: data.success ?? true,
-      token: data.token,
-      user: data.user,
-      message: data.message || 'Authentication successful',
+      ...getAuthPayload(response.data),
+      message: response.data.message || 'Authentication successful',
     };
   },
 
-  // 3. Login with password
   loginWithPassword: async ({ phoneOrEmail, password }) => {
     const response = await axiosClient.post('/auth/login/', {
       phone_or_email: phoneOrEmail,
       password,
     });
-    const data = response.data;
     return {
-      success: data.success ?? true,
-      token: data.token,
-      user: data.user,
-      message: data.message || 'Logged in successfully',
+      ...getAuthPayload(response.data),
+      message: response.data.message || 'Logged in successfully',
     };
   },
 
-  // 4. Register new user
   registerUser: async (registrationData) => {
     const response = await axiosClient.post('/auth/register/', {
       full_name: registrationData.fullName,
@@ -69,26 +72,25 @@ export const authApi = {
     return {
       success: data.success ?? true,
       otpRequired: data.otp_required ?? true,
-      message: data.message || 'Registration validated. OTP sent to mobile number.',
-      phone: registrationData.phone,
-      demoOtp: data.demo_otp || '123456',
+      message: data.message || 'Registration OTP requested.',
+      phone: data.phone || registrationData.phone,
+      demoOtp: data.demo_otp || null,
     };
   },
 
-  // 5. Get current user profile
   getProfile: async () => {
     const response = await axiosClient.get('/auth/me/');
     return response.data;
   },
 
-  // 6. Logout
   logout: async () => {
     const refreshToken = localStorage.getItem('agrimart_refresh_token');
+    if (!refreshToken) return { success: true };
     try {
       await axiosClient.post('/auth/logout/', { refresh_token: refreshToken });
-    } catch (e) {
-      // Ignore network errors on local state wipe
+    } catch {
+      // Always clear local auth state even if the API is unavailable.
     }
     return { success: true };
-  }
+  },
 };
