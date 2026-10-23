@@ -84,28 +84,27 @@ export const useAuth = () => {
 
   const registerMutation = useMutation({
     mutationFn: (formData) => authApi.registerUser(formData),
-    onSuccess: (data, formData) => {
+    onSuccess: (data) => {
+      // Registration is password-based. Never start an SMS OTP flow here,
+      // even if an older backend response still includes otp_required.
+      dispatch(clearPendingOTP());
       if (data.token && data.user) {
         dispatch(setCredentials({
           user: data.user,
           token: data.token,
           refreshToken: data.refreshToken,
         }));
-        dispatch(clearPendingOTP());
         redirectAfterLogin(data.user);
         return;
       }
-      if (data.otpRequired) {
-        dispatch(setPendingOTP({
-          phone: formData.phone,
-          role: formData.role,
-          profileData: formData,
-          demoOtp: data.demoOtp || null,
-          mode: 'register',
-        }));
-      }
+      dispatch(setError(
+        'Registration did not complete password authentication. Check that the backend is updated and returns a token and user.'
+      ));
     },
-    onError: (err) => dispatch(setError(err.message || 'Registration failed')),
+    onError: (err) => {
+      dispatch(clearPendingOTP());
+      dispatch(setError(err.message || 'Registration failed'));
+    },
   });
 
   const handleLogout = async () => {
