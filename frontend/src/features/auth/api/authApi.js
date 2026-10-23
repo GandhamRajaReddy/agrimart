@@ -60,6 +60,7 @@ export const authApi = {
     const response = await axiosClient.post('/auth/register/', {
       full_name: registrationData.fullName,
       phone: registrationData.phone,
+      password: registrationData.password,
       email: registrationData.email,
       role: registrationData.role,
       state: registrationData.state,
@@ -74,11 +75,9 @@ export const authApi = {
     });
     const data = response.data;
     return {
-      success: data.success ?? true,
-      otpRequired: data.otp_required ?? true,
-      message: data.message || 'Registration OTP requested.',
-      phone: data.phone || registrationData.phone,
-      demoOtp: data.demo_otp || null,
+      ...getAuthPayload(data),
+      otpRequired: data.otp_required ?? false,
+      message: data.message || 'Account created successfully.',
     };
   },
 

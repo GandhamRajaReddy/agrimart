@@ -28,9 +28,10 @@ def get_tokens_for_user(user):
 
 
 def normalize_phone(value):
-    phone = "".join(str(value).split()).replace("-", "")
-    if phone.startswith("+91"):
-        phone = phone[3:]
+    # Normalize common user-entered formats such as +91 98765-43210.
+    phone = "".join(character for character in str(value) if character.isdigit())
+    if len(phone) == 12 and phone.startswith("91"):
+        phone = phone[2:]
     return phone
 
 
@@ -225,10 +226,9 @@ class RegisterView(APIView):
         data = serializer.validated_data
         phone = normalize_phone(data["phone"])
         email = (data.get("email") or "").strip().lower()
-
-        if len(phone) < 10:
+        if not phone or len(phone) != 10 or not phone.isdigit():
             return Response(
-                {"detail": "Enter a valid phone number."},
+                {"detail": "Enter a valid 10-digit Indian mobile number."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if User.objects.filter(phone=phone).exists():
@@ -242,34 +242,46 @@ class RegisterView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Registration remains OTP-first; no user is created until OTP verification.
-        # In production this stays disabled until an SMS provider is configured.
-        if not settings.DEBUG:
+        # Email is optional in the registration UI; the custom user model still
+        # needs a unique login email, so create a private phone-based alias.
+        if not email:
+            email = f"user_{phone}@agrimart.in"
+
+        full_name = data["full_name"].strip()
+        name_parts = full_name.split(maxsplit=1)
+        district = data["district"]
+        taluk = data["taluk"]
+        village = data["village"]
+        state = data.get("state") or "Karnataka"
+        location = ", ".join(part for part in (village, taluk, district, state) if part)
+
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    email=email,
+                    password=data["password"],
+                    phone=phone,
+                    first_name=name_parts[0][:100],
+                    last_name=name_parts[1][:100] if len(name_parts) > 1 else "",
+                    role=data["role"],
+                    location=location,
+                    district=district,
+                    taluk=taluk,
+                    village=village,
+                    mandi=data.get("mandi") or "",
+                    land_area_acres=data.get("land_area_acres", 5.0),
+                    primary_crops=data.get("primary_crop") or "",
+                    company_name=data.get("company_name") or "",
+                    gstin=data.get("gstin") or "",
+                    is_verified=False,
+                )
+        except IntegrityError:
             return Response(
-                {"detail": "OTP delivery is not configured. Registration is temporarily unavailable."},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                {"detail": "An account with these details already exists. Please log in."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        otp_code = make_otp()
-        record, _ = OTPVerification.objects.update_or_create(
-            phone=phone,
-            defaults={
-                "otp_code": otp_code,
-                "is_verified": False,
-                "expires_at": timezone.now() + timezone.timedelta(minutes=10),
-            },
-        )
-        payload = {
-            "success": True,
-            "otp_required": True,
-            "message": "Development OTP generated. SMS delivery is not configured.",
-            "phone": phone,
-            "otp_ref_id": str(record.id),
-        }
-        if settings.DEBUG:
-            payload["demo_otp"] = otp_code
-        return Response(payload, status=status.HTTP_200_OK)
-
+        return auth_response(user, "Account created successfully. You are now logged in.")
 
 class UserMeView(APIView):
     permission_classes = [permissions.IsAuthenticated]

@@ -14,24 +14,16 @@ export const otpSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  authMode: z.enum(['otp', 'password']).default('otp'),
-  phoneOrEmail: z.string().min(1, 'Phone number or email is required').refine((val) => {
+  phoneOrEmail: z.string().trim().min(1, 'Phone number or email is required').refine((val) => {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
     const cleanedPhone = val.replace(/\D/g, '');
-    const isPhone = cleanedPhone.length === 10 && /^[6-9]/.test(cleanedPhone);
+    const normalizedPhone = cleanedPhone.length === 12 && cleanedPhone.startsWith('91')
+      ? cleanedPhone.slice(2)
+      : cleanedPhone;
+    const isPhone = normalizedPhone.length === 10 && /^[6-9]/.test(normalizedPhone);
     return isEmail || isPhone;
-  }, {
-    message: 'Enter a valid 10-digit mobile number or email address',
-  }),
-  password: z.string().optional(),
-}).refine((data) => {
-  if (data.authMode === 'password') {
-    return !!data.password && data.password.length >= 6;
-  }
-  return true;
-}, {
-  message: 'Password must be at least 6 characters long',
-  path: ['password'],
+  }, { message: 'Enter a valid 10-digit mobile number or email address' }),
+  password: z.string().min(1, 'Password is required'),
 });
 
 export const registerSchema = z.object({
@@ -40,6 +32,8 @@ export const registerSchema = z.object({
   }),
   fullName: z.string().min(2, 'Full Name must be at least 2 characters long'),
   phone: phoneSchema,
+  password: z.string().min(8, 'Password must be at least 8 characters long'),
+  confirmPassword: z.string().min(8, 'Please confirm your password'),
   email: z.string().email('Invalid email address').or(z.literal('')).optional(),
   state: z.string().min(1, 'Please select your State'),
   district: z.string().min(1, 'Please select your Karnataka district'),
@@ -56,4 +50,7 @@ export const registerSchema = z.object({
   agreeToTerms: z.boolean().refine(val => val === true, {
     message: 'You must accept the terms and privacy policy',
   }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });

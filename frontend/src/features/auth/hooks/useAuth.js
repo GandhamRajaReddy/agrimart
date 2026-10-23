@@ -85,6 +85,16 @@ export const useAuth = () => {
   const registerMutation = useMutation({
     mutationFn: (formData) => authApi.registerUser(formData),
     onSuccess: (data, formData) => {
+      if (data.token && data.user) {
+        dispatch(setCredentials({
+          user: data.user,
+          token: data.token,
+          refreshToken: data.refreshToken,
+        }));
+        dispatch(clearPendingOTP());
+        redirectAfterLogin(data.user);
+        return;
+      }
       if (data.otpRequired) {
         dispatch(setPendingOTP({
           phone: formData.phone,
@@ -108,6 +118,7 @@ export const useAuth = () => {
     user: currentUser,
     isAuthenticated,
     pendingOTP,
+    cancelOTP: () => dispatch(clearPendingOTP()),
 
     requestOTP: (phone, role = 'Farmer') => requestOTPMutation.mutateAsync({ phone, role }),
     isRequestingOTP: requestOTPMutation.isPending,

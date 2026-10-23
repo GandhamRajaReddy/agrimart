@@ -25,7 +25,7 @@ class KarnatakaLocationsAPITests(TestCase):
 
     def test_registration_rejects_other_states(self):
         serializer = RegisterSerializer(data={
-            "full_name": "Test User", "phone": "9876543210", "state": "Maharashtra",
+            "full_name": "Test User", "phone": "9876543210", "password": "test-password-123", "state": "Maharashtra",
             "district": "Pune", "taluk": "Pune", "village": "Sample", "role": "FARMER",
         })
         self.assertFalse(serializer.is_valid())

@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, Phone, Sprout, Building, ArrowRight, CheckSquare, Square } from 'lucide-react';
+import { User, Phone, Lock, Sprout, Building, ArrowRight, CheckSquare, Square } from 'lucide-react';
 import { registerSchema } from '../schemas/authSchemas';
 import { useAuth } from '../hooks/useAuth';
 import AuthLayout from '../components/AuthLayout';
 import RoleSelectorCard from '../components/RoleSelectorCard';
-import OTPVerificationModal from '../components/OTPVerificationModal';
 import Input from '../../../components/common/Input';
 import Button from '../../../components/common/Button';
 import axiosClient from '../../../services/http/axiosClient';
@@ -15,7 +14,6 @@ import axiosClient from '../../../services/http/axiosClient';
 export const RegisterPage = () => {
   const {
     register: registerUser, isRegistering, registerError,
-    verifyOTP, isVerifyingOTP, pendingOTP, requestOTP,
   } = useAuth();
   const [localError, setLocalError] = useState('');
   const [districtOptions, setDistrictOptions] = useState([]);
@@ -124,34 +122,6 @@ export const RegisterPage = () => {
     }
   };
 
-  const handleVerifyOTP = async (otpCode) => {
-    if (!pendingOTP?.phone) return;
-    setLocalError('');
-    try {
-      await verifyOTP({
-        phone: pendingOTP.phone,
-        otp: otpCode,
-        role: pendingOTP.role,
-        profileData: pendingOTP.profileData,
-      });
-    } catch (err) {
-      setLocalError(err.response?.data?.detail || err.response?.data?.message || err.message || 'Invalid or expired OTP code.');
-    }
-  };
-
-  const handleResendOTP = async () => {
-    if (!pendingOTP?.phone) return;
-    setLocalError('');
-    try {
-      if (pendingOTP.mode === 'register' && pendingOTP.profileData) {
-        await registerUser(pendingOTP.profileData);
-      } else {
-        await requestOTP(pendingOTP.phone, pendingOTP.role || 'Farmer');
-      }
-    } catch (err) {
-      setLocalError(err.response?.data?.detail || err.response?.data?.message || err.message || 'Failed to resend OTP.');
-    }
-  };
 
   return (
     <AuthLayout
@@ -193,6 +163,29 @@ export const RegisterPage = () => {
           {...register('email')}
         />
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Create Password"
+            type="password"
+            placeholder="At least 8 characters"
+            leftIcon={<Lock className="w-4 h-4" />}
+            error={errors.password?.message}
+            autoComplete="new-password"
+            {...register('password')}
+          />
+          <Input
+            label="Confirm Password"
+            type="password"
+            placeholder="Re-enter your password"
+            leftIcon={<Lock className="w-4 h-4" />}
+            error={errors.confirmPassword?.message}
+            autoComplete="new-password"
+            {...register('confirmPassword')}
+          />
+        </div>
+
+        <p className="text-xs text-emerald-200/70">Create a password to register. No SMS or OTP is required.</p>
+
         <input type="hidden" {...register('state')} value="Karnataka" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -217,7 +210,6 @@ export const RegisterPage = () => {
             <select value={selectedTaluk || ''} disabled={!selectedDistrict} onChange={(event) => {
               setValue('taluk', event.target.value, { shouldValidate: true });
               setValue('village', '', { shouldValidate: true });
-              setVillageSearch('');
               setVillageOptions([]);
             }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
               <option value="" className="bg-emerald-900">Select taluk</option>
@@ -280,7 +272,7 @@ export const RegisterPage = () => {
             <div className="mt-0.5 text-emerald-400">
               {agreeToTerms ? <CheckSquare className="w-4 h-4 fill-emerald-400/20" /> : <Square className="w-4 h-4 text-emerald-600" />}
             </div>
-            <span>I agree to the <span className="text-emerald-300 font-bold">Terms of Service</span>, <span className="text-emerald-300 font-bold">Farmer Data Privacy</span> and SMS OTP alerts.</span>
+            <span>I agree to the <span className="text-emerald-300 font-bold">Terms of Service</span>, <span className="text-emerald-300 font-bold">Farmer Data Privacy</span> and account security policy.</span>
           </label>
           {errors.agreeToTerms?.message && <p className="text-xs text-red-400 mt-1">{errors.agreeToTerms.message}</p>}
         </div>
@@ -292,7 +284,7 @@ export const RegisterPage = () => {
         )}
 
         <Button type="submit" variant="primary" size="lg" fullWidth isLoading={isRegistering} className="shadow-lg shadow-emerald-900/60 gap-2 text-base font-bold">
-          Create Account & Verify OTP <ArrowRight className="w-5 h-5" />
+          Create Account <ArrowRight className="w-5 h-5" />
         </Button>
       </form>
 
@@ -300,14 +292,6 @@ export const RegisterPage = () => {
         Already have an account? <Link to="/login" className="text-emerald-400 font-bold hover:underline">Sign In</Link>
       </div>
 
-      <OTPVerificationModal
-        isOpen={!!pendingOTP && pendingOTP.mode === 'register'}
-        phone={pendingOTP?.phone || watch('phone')}
-        onVerify={handleVerifyOTP}
-        onResend={handleResendOTP}
-        isLoading={isVerifyingOTP}
-        error={localError}
-      />
     </AuthLayout>
   );
 };
