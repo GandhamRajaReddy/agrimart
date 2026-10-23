@@ -1,16 +1,22 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status, permissions
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model
+import secrets
+import string
+
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
+from django.db import IntegrityError, transaction
 from django.utils import timezone
+from rest_framework import permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from .models import OTPVerification
 from .serializers import (
-    UserSerializer,
-    RequestOTPSerializer,
-    VerifyOTPSerializer,
     LoginSerializer,
     RegisterSerializer,
+    RequestOTPSerializer,
+    UserSerializer,
+    VerifyOTPSerializer,
 )
 
 User = get_user_model()
@@ -18,10 +24,34 @@ User = get_user_model()
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
+    return {"refresh": str(refresh), "access": str(refresh.access_token)}
+
+
+def normalize_phone(value):
+    phone = "".join(str(value).split()).replace("-", "")
+    if phone.startswith("+91"):
+        phone = phone[3:]
+    return phone
+
+
+def make_otp():
+    return "".join(secrets.choice(string.digits) for _ in range(6))
+
+
+def auth_response(user, message):
+    tokens = get_tokens_for_user(user)
+    return Response(
+        {
+            "success": True,
+            "token": tokens["access"],
+            "access": tokens["access"],
+            "refresh_token": tokens["refresh"],
+            "refresh": tokens["refresh"],
+            "user": UserSerializer(user).data,
+            "message": message,
+        },
+        status=status.HTTP_200_OK,
+    )
 
 
 class RequestOTPView(APIView):
@@ -29,27 +59,41 @@ class RequestOTPView(APIView):
 
     def post(self, request):
         serializer = RequestOTPSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        phone = normalize_phone(serializer.validated_data["phone"])
 
-        phone = serializer.validated_data['phone'].replace(" ", "").replace("+91", "")
-        demo_otp = "123456"
+        if not phone or len(phone) < 10:
+            return Response(
+                {"detail": "Enter a valid phone number."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        otp_record, _ = OTPVerification.objects.update_or_create(
+        # A real SMS provider must be configured before OTP login is enabled
+        # outside development. Never claim an OTP was delivered when it was not.
+        if not settings.DEBUG:
+            return Response(
+                {"detail": "OTP delivery is not configured. Use password login for now."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        otp_code = make_otp()
+        record, _ = OTPVerification.objects.update_or_create(
             phone=phone,
             defaults={
-                'otp_code': demo_otp,
-                'is_verified': False,
-                'expires_at': timezone.now() + timezone.timedelta(minutes=10)
-            }
+                "otp_code": otp_code,
+                "is_verified": False,
+                "expires_at": timezone.now() + timezone.timedelta(minutes=10),
+            },
         )
-
-        return Response({
-            'success': True,
-            'message': f"OTP sent successfully to +91 {phone}",
-            'otp_ref_id': str(otp_record.id),
-            'demo_otp': demo_otp,
-        })
+        payload = {
+            "success": True,
+            "message": "Development OTP generated. SMS delivery is not configured.",
+            "otp_ref_id": str(record.id),
+        }
+        # Development-only convenience. This is never included in production.
+        if settings.DEBUG:
+            payload["demo_otp"] = otp_code
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class VerifyOTPView(APIView):
@@ -57,62 +101,86 @@ class VerifyOTPView(APIView):
 
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        phone = normalize_phone(data["phone"])
+        otp_record = OTPVerification.objects.filter(
+            phone=phone,
+            otp_code=data["otp"],
+            is_verified=False,
+            expires_at__gte=timezone.now(),
+        ).first()
 
-        phone = serializer.validated_data['phone'].replace(" ", "").replace("+91", "")
-        otp = serializer.validated_data['otp']
-        role_str = serializer.validated_data.get('role', 'Farmer').upper()
+        if not otp_record:
+            return Response(
+                {"success": False, "message": "Invalid or expired OTP code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if role_str == 'VENDOR' or role_str == 'MERCHANT':
-            role = User.Role.SELLER
-        elif role_str == 'BUYER':
-            role = User.Role.BUYER
-        else:
-            role = User.Role.FARMER
+        full_name = (data.get("full_name") or "").strip()
+        if not full_name:
+            full_name = (request.data.get("fullName") or "").strip()
+        if not full_name:
+            full_name = "AgriMart User"
 
-        # Demo OTP logic
-        if otp != "123456" and otp != "654321":
-            otp_record = OTPVerification.objects.filter(phone=phone, otp_code=otp, is_verified=False).first()
-            if not otp_record or not otp_record.is_valid():
-                return Response({'success': False, 'message': 'Invalid or expired OTP code'}, status=status.HTTP_400_BAD_REQUEST)
-            otp_record.is_verified = True
-            otp_record.save()
+        email = (data.get("email") or "").strip().lower()
+        if not email:
+            email = f"user_{phone}@agrimart.in"
 
-        full_name = serializer.validated_data.get('full_name') or request.data.get('fullName') or 'AgriMart Farmer'
-        email = serializer.validated_data.get('email') or f"user_{phone}@agrimart.in"
-        state = serializer.validated_data.get('state') or 'Madhya Pradesh'
-        district = serializer.validated_data.get('district') or 'Indore'
-        mandi = serializer.validated_data.get('mandi') or 'Indore Grain Mandi'
-
+        role = data["role"]
+        state = data.get("state") or "Madhya Pradesh"
+        district = data.get("district") or "Indore"
         location = f"{district}, {state}" if district else state
 
-        user, created = User.objects.get_or_create(
-            phone=phone,
-            defaults={
-                'email': email,
-                'first_name': full_name,
-                'role': role,
-                'location': location,
-                'mandi': mandi,
-                'is_verified': True,
-            }
-        )
+        try:
+            with transaction.atomic():
+                user = User.objects.filter(phone=phone).first()
+                if user is None:
+                    if User.objects.filter(email=email).exists():
+                        return Response(
+                            {"detail": "An account with this email already exists."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    user = User.objects.create_user(
+                        email=email,
+                        password=None,
+                        phone=phone,
+                        first_name=full_name[:100],
+                        role=role,
+                        location=location,
+                        mandi=data.get("mandi") or "Indore Grain Mandi",
+                        land_area_acres=data.get("land_area_acres", 5.0),
+                        primary_crops=data.get("primary_crop") or "Wheat & Soybean",
+                        company_name=data.get("company_name") or "",
+                        gstin=data.get("gstin") or "",
+                        is_verified=True,
+                    )
+                else:
+                    if not user.is_active:
+                        return Response(
+                            {"detail": "This account is inactive. Contact support."},
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
+                    # OTP login must not silently change an existing account's role.
+                    if user.role != role:
+                        return Response(
+                            {"detail": "The selected role does not match this account."},
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
+                otp_record.is_verified = True
+                otp_record.save(update_fields=["is_verified"])
+        except IntegrityError:
+            return Response(
+                {"detail": "An account with these details already exists."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if not created and full_name:
-            user.first_name = full_name
-            user.save()
-
-        tokens = get_tokens_for_user(user)
-        user_data = UserSerializer(user).data
-
-        return Response({
-            'success': True,
-            'token': tokens['access'],
-            'refresh_token': tokens['refresh'],
-            'user': user_data,
-            'message': 'Authentication successful',
-        })
+        if not user.is_active:
+            return Response(
+                {"detail": "This account is inactive. Contact support."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return auth_response(user, "Authentication successful")
 
 
 class LoginView(APIView):
@@ -120,35 +188,27 @@ class LoginView(APIView):
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        identifier = serializer.validated_data["phone_or_email"].strip()
+        password = serializer.validated_data["password"]
+        cleaned_phone = normalize_phone(identifier)
 
-        phone_or_email = serializer.validated_data['phone_or_email']
-        cleaned_phone = phone_or_email.replace(" ", "").replace("+91", "").replace("-", "")
+        user = User.objects.filter(email__iexact=identifier).first()
+        if user is None:
+            user = User.objects.filter(phone=cleaned_phone).first()
 
-        user = User.objects.filter(phone=cleaned_phone).first() or User.objects.filter(email=phone_or_email).first()
-
-        if not user:
-            user = User.objects.create(
-                phone=cleaned_phone,
-                email=f"user_{cleaned_phone}@agrimart.in",
-                first_name="Rajesh Kumar Patel",
-                role=User.Role.FARMER,
-                location="Indore, Madhya Pradesh",
-                mandi="Indore Grain Mandi",
-                is_verified=True,
+        # Do not create accounts or issue tokens when credentials are invalid.
+        if user is None or not user.check_password(password):
+            return Response(
+                {"success": False, "message": "Invalid email/phone or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
-
-        tokens = get_tokens_for_user(user)
-        user_data = UserSerializer(user).data
-
-        return Response({
-            'success': True,
-            'token': tokens['access'],
-            'refresh_token': tokens['refresh'],
-            'user': user_data,
-            'message': 'Logged in successfully',
-        })
+        if not user.is_active:
+            return Response(
+                {"success": False, "message": "This account is inactive. Contact support."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return auth_response(user, "Logged in successfully")
 
 
 class RegisterView(APIView):
@@ -156,48 +216,81 @@ class RegisterView(APIView):
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        phone = data['phone'].replace(" ", "").replace("+91", "")
-        demo_otp = "123456"
+        phone = normalize_phone(data["phone"])
+        email = (data.get("email") or "").strip().lower()
 
-        OTPVerification.objects.update_or_create(
+        if len(phone) < 10:
+            return Response(
+                {"detail": "Enter a valid phone number."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if User.objects.filter(phone=phone).exists():
+            return Response(
+                {"detail": "An account with this phone number already exists. Please log in."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if email and User.objects.filter(email__iexact=email).exists():
+            return Response(
+                {"detail": "An account with this email already exists. Please log in."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Registration remains OTP-first; no user is created until OTP verification.
+        # In production this stays disabled until an SMS provider is configured.
+        if not settings.DEBUG:
+            return Response(
+                {"detail": "OTP delivery is not configured. Registration is temporarily unavailable."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        otp_code = make_otp()
+        record, _ = OTPVerification.objects.update_or_create(
             phone=phone,
             defaults={
-                'otp_code': demo_otp,
-                'is_verified': False,
-                'expires_at': timezone.now() + timezone.timedelta(minutes=10)
-            }
+                "otp_code": otp_code,
+                "is_verified": False,
+                "expires_at": timezone.now() + timezone.timedelta(minutes=10),
+            },
         )
-
-        return Response({
-            'success': True,
-            'otp_required': True,
-            'message': 'Registration validated. OTP sent to mobile.',
-            'phone': phone,
-            'demo_otp': demo_otp,
-        })
+        payload = {
+            "success": True,
+            "otp_required": True,
+            "message": "Development OTP generated. SMS delivery is not configured.",
+            "phone": phone,
+            "otp_ref_id": str(record.id),
+        }
+        if settings.DEBUG:
+            payload["demo_otp"] = otp_code
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class UserMeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        return Response(UserSerializer(request.user).data)
 
 
 class LogoutView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        refresh_token = request.data.get("refresh_token") or request.data.get("refresh")
+        if not refresh_token:
+            return Response(
+                {"success": False, "message": "A refresh token is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
-            refresh_token = request.data.get("refresh_token") or request.data.get("refresh")
-            if refresh_token:
-                token = RefreshToken(refresh_token)
-                token.blacklist()
-            return Response({'success': True, 'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'success': True, 'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
+            RefreshToken(refresh_token).blacklist()
+        except Exception:
+            return Response(
+                {"success": False, "message": "Invalid or expired refresh token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {"success": True, "message": "Logged out successfully."},
+            status=status.HTTP_200_OK,
+        )
