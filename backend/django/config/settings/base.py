@@ -52,6 +52,7 @@ INSTALLED_APPS = [
 
     # AgriMart apps
     "apps.accounts",
+    "apps.locations",
     "apps.products",
     "apps.categories",
     "apps.inventory",
