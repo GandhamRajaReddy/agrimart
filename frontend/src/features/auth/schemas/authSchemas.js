@@ -14,8 +14,7 @@ export const otpSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  authMode: z.enum(['otp', 'password']).default('otp'),
-  phoneOrEmail: z.string().min(1, 'Phone number or email is required').refine((val) => {
+  phoneOrEmail: z.string().trim().min(1, 'Phone number or email is required').refine((val) => {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
     const cleanedPhone = val.replace(/\D/g, '');
     const normalizedPhone = cleanedPhone.length === 12 && cleanedPhone.startsWith('91')
@@ -23,18 +22,8 @@ export const loginSchema = z.object({
       : cleanedPhone;
     const isPhone = normalizedPhone.length === 10 && /^[6-9]/.test(normalizedPhone);
     return isEmail || isPhone;
-  }, {
-    message: 'Enter a valid 10-digit mobile number or email address',
-  }),
-  password: z.string().optional(),
-}).refine((data) => {
-  if (data.authMode === 'password') {
-    return !!data.password && data.password.length >= 6;
-  }
-  return true;
-}, {
-  message: 'Password must be at least 6 characters long',
-  path: ['password'],
+  }, { message: 'Enter a valid 10-digit mobile number or email address' }),
+  password: z.string().min(1, 'Password is required'),
 });
 
 export const registerSchema = z.object({
