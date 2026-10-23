@@ -32,6 +32,18 @@ class AuthenticationSecurityTests(TestCase):
         self.assertIn("refresh_token", response.data)
         self.assertEqual(response.data["user"]["role"], User.Role.FARMER)
 
+    def test_password_login_accepts_phone_number(self):
+        response = self.client.post(
+            "/api/v1/auth/login/",
+            {
+                "phone_or_email": "+91 98765-43210",
+                "password": "Correct-Horse-Battery-42!",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["user"]["phone"], "9876543210")
+
     def test_invalid_password_does_not_issue_tokens_or_create_account(self):
         before = User.objects.count()
         response = self.client.post(
