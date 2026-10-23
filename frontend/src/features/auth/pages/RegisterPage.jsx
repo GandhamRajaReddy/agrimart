@@ -15,7 +15,7 @@ import axiosClient from '../../../services/http/axiosClient';
 export const RegisterPage = () => {
   const {
     register: registerUser, isRegistering, registerError,
-    verifyOTP, isVerifyingOTP, pendingOTP, requestOTP,
+    verifyOTP, isVerifyingOTP, pendingOTP, requestOTP, cancelOTP,
   } = useAuth();
   const [localError, setLocalError] = useState('');
   const [districtOptions, setDistrictOptions] = useState([]);
@@ -322,6 +322,7 @@ export const RegisterPage = () => {
 
       <OTPVerificationModal
         isOpen={!!pendingOTP && pendingOTP.mode === 'register'}
+        onClose={cancelOTP}
         phone={pendingOTP?.phone || watch('phone')}
         onVerify={handleVerifyOTP}
         onResend={handleResendOTP}
