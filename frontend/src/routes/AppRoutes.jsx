@@ -56,7 +56,7 @@ const HomeRedirect = ({ onOpenAiAssistant }) => {
     STAFF: ROUTES.staffDashboard,
     ADMIN: ROUTES.admin,
   };
-  return <Navigate to={destinations[role] || ROUTES.home} replace />;
+  return <Navigate to={destinations[role] || ROUTES.unauthorized} replace />;
 };
 
 const RoleDashboard = ({ title, description, links }) => (
