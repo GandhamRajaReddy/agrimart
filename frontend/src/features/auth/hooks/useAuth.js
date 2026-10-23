@@ -118,6 +118,7 @@ export const useAuth = () => {
     user: currentUser,
     isAuthenticated,
     pendingOTP,
+    cancelOTP: () => dispatch(clearPendingOTP()),
 
     requestOTP: (phone, role = 'Farmer') => requestOTPMutation.mutateAsync({ phone, role }),
     isRequestingOTP: requestOTPMutation.isPending,
