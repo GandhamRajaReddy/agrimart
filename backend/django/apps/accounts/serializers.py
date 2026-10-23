@@ -102,6 +102,7 @@ class RegisterSerializer(serializers.Serializer):
     role = serializers.CharField(required=False, default="FARMER")
     full_name = serializers.CharField(required=True, max_length=200)
     phone = serializers.CharField(required=True, max_length=20)
+    password = serializers.CharField(required=True, write_only=True, min_length=8, trim_whitespace=False)
     email = serializers.EmailField(required=False, allow_blank=True)
     state = serializers.CharField(required=False, default="Karnataka", max_length=100)
     district = serializers.CharField(required=True, max_length=100)
