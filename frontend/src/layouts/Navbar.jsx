@@ -24,6 +24,41 @@ export const Navbar = ({ onOpenAiAssistant }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
+  const role = String(user?.role || "").trim().toUpperCase();
+  const roleNavigation = {
+    FARMER: primaryNavigation,
+    BUYER: [
+      { label: "Buy produce", to: ROUTES.procurement, icon: ShoppingBag },
+      { label: "Market prices", to: ROUTES.marketIntelligence, icon: LayoutDashboard },
+      { label: "My orders", to: ROUTES.orders, icon: ShoppingBag },
+    ],
+    SELLER: [
+      { label: "My products", to: ROUTES.catalog, icon: ShoppingBag },
+      { label: "Market prices", to: ROUTES.marketIntelligence, icon: LayoutDashboard },
+      { label: "Customer orders", to: ROUTES.orders, icon: ShoppingBag },
+    ],
+    VENDOR: [
+      { label: "My products", to: ROUTES.catalog, icon: ShoppingBag },
+      { label: "Market prices", to: ROUTES.marketIntelligence, icon: LayoutDashboard },
+      { label: "Customer orders", to: ROUTES.orders, icon: ShoppingBag },
+    ],
+  };
+  const dashboardByRole = {
+    FARMER: ROUTES.farmerDashboard,
+    BUYER: ROUTES.buyerDashboard,
+    SELLER: ROUTES.vendorDashboard,
+    VENDOR: ROUTES.vendorDashboard,
+    EXPERT: ROUTES.expertDashboard,
+    STAFF: ROUTES.staffDashboard,
+    ADMIN: ROUTES.admin,
+  };
+  const navigationItems = isAuthenticated && roleNavigation[role]
+    ? roleNavigation[role]
+    : primaryNavigation;
+  const mobileNavigationItems = isAuthenticated && roleNavigation[role]
+    ? [...navigationItems, ...(role === "FARMER" ? [{ label: "Crop health scan", to: ROUTES.aiDetection, icon: LayoutDashboard }] : [])]
+    : mobileQuickLinks;
+
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#1d4b34]/10 bg-[#f6f5ef]/95 backdrop-blur-lg">
@@ -39,7 +74,7 @@ export const Navbar = ({ onOpenAiAssistant }) => {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
-          {primaryNavigation.map(({ label, to, icon: Icon }) => (
+          {navigationItems.map(({ label, to, icon: Icon }) => (
             <NavLink key={to} to={to} className={navigationLinkClass}>
               <Icon className="h-4 w-4" aria-hidden="true" />
               {label}
@@ -99,7 +134,7 @@ export const Navbar = ({ onOpenAiAssistant }) => {
 
                   <div className="pt-1 border-t border-[#1d4b34]/10 space-y-1">
                     <Link
-                      to={ROUTES.admin}
+                      to={dashboardByRole[role] || ROUTES.home}
                       onClick={() => setIsUserMenuOpen(false)}
                       className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#163124] hover:bg-[#eaf0e7] font-semibold transition-colors"
                     >
@@ -147,7 +182,7 @@ export const Navbar = ({ onOpenAiAssistant }) => {
       {isMenuOpen && (
         <div id="mobile-navigation" className="border-t border-[#1d4b34]/10 bg-[#f6f5ef] lg:hidden">
           <nav className="content-container grid gap-1 py-4" aria-label="Mobile navigation">
-            {mobileQuickLinks.map(({ label, to, icon: Icon }) => (
+            {mobileNavigationItems.map(({ label, to, icon: Icon }) => (
               <NavLink key={to} to={to} className={navigationLinkClass} onClick={() => setIsMenuOpen(false)}>
                 <Icon className="h-4 w-4" aria-hidden="true" />
                 {label}
