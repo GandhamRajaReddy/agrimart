@@ -21,7 +21,7 @@ export const RegisterPage = () => {
   const [districtOptions, setDistrictOptions] = useState([]);
   const [talukOptions, setTalukOptions] = useState([]);
   const [villageOptions, setVillageOptions] = useState([]);
-  const [villageSearch, setVillageSearch] = useState('');
+  const [mandiOptions, setMandiOptions] = useState([]);
   const [locationError, setLocationError] = useState('');
 
   const {
@@ -55,9 +55,6 @@ export const RegisterPage = () => {
   const selectedTaluk = watch('taluk');
   const selectedVillage = watch('village');
   const agreeToTerms = watch('agreeToTerms');
-  const filteredVillageOptions = villageOptions.filter((item) =>
-    item.name.toLocaleLowerCase().includes(villageSearch.trim().toLocaleLowerCase())
-  );
 
   useEffect(() => {
     let active = true;
@@ -94,6 +91,29 @@ export const RegisterPage = () => {
     }).catch(() => { if (active) setLocationError('Could not load villages for this taluk. Please try again.'); });
     return () => { active = false; };
   }, [selectedDistrict, selectedTaluk]);
+
+  useEffect(() => {
+    if (!selectedDistrict || !selectedVillage) {
+      setMandiOptions([]);
+      setValue('mandi', '', { shouldValidate: true });
+      return undefined;
+    }
+    let active = true;
+    axiosClient.get('/locations/karnataka/', { params: {
+      level: 'mandi', district: selectedDistrict, taluk: selectedTaluk,
+    } }).then(({ data }) => {
+      if (!active) return;
+      setMandiOptions(data.results || []);
+      setValue('mandi', data.suggested || '', { shouldValidate: true });
+    }).catch(() => {
+      if (active) {
+        setMandiOptions([]);
+        setValue('mandi', '', { shouldValidate: true });
+        setLocationError('Could not suggest a mandi. You can choose one manually if available.');
+      }
+    });
+    return () => { active = false; };
+  }, [selectedDistrict, selectedTaluk, selectedVillage, setValue]);
 
   const onFormSubmit = async (data) => {
     setLocalError('');
@@ -185,7 +205,6 @@ export const RegisterPage = () => {
               setValue('district', event.target.value, { shouldValidate: true });
               setValue('taluk', '', { shouldValidate: true });
               setValue('village', '', { shouldValidate: true });
-              setVillageSearch('');
               setVillageOptions([]);
             }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
               <option value="" className="bg-emerald-900">Select district</option>
@@ -208,18 +227,14 @@ export const RegisterPage = () => {
           </div>
           <div className="space-y-1.5">
             <label className="block text-sm font-semibold text-emerald-200">Village</label>
-            <input value={villageSearch} disabled={!selectedTaluk} onChange={(event) => {
-              setVillageSearch(event.target.value);
-              setValue('village', '', { shouldValidate: true });
-            }} placeholder="Search all villages in this taluk" className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30" />
             <select value={selectedVillage || ''} disabled={!selectedTaluk || villageOptions.length === 0} onChange={(event) => {
               setValue('village', event.target.value, { shouldValidate: true });
             }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
               <option value="" className="bg-emerald-900">{villageOptions.length ? 'Select village' : 'Loading or no villages available'}</option>
-              {filteredVillageOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+              {villageOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
             </select>
             {errors.village?.message && <p className="text-xs text-red-400">{errors.village.message}</p>}
-            {villageSearch.trim() && filteredVillageOptions.length === 0 && villageOptions.length > 0 && <p className="text-xs text-emerald-200/70">No matching villages found in this taluk.</p>}
+            {villageOptions.length > 0 && <p className="text-xs text-emerald-200/70">Select your village from the list. Type its first letters while the dropdown is open to jump to it.</p>}
           </div>
         </div>
         {locationError && <p role="status" className="text-xs text-amber-300">{locationError}</p>}
@@ -233,7 +248,15 @@ export const RegisterPage = () => {
               <Input label="Land Size (Acres)" type="number" step="0.5" placeholder="e.g. 5.5" error={errors.landAreaAcres?.message} {...register('landAreaAcres')} />
               <Input label="Primary Crops Grown" placeholder="e.g. Wheat, Soybean, Cotton" error={errors.primaryCrop?.message} {...register('primaryCrop')} />
             </div>
-            <Input label="Nearest Mandi Hub" placeholder="Enter your nearest Karnataka mandi" error={errors.mandi?.message} {...register('mandi')} />
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-emerald-200">Suggested Nearby Mandi</label>
+              <select value={watch('mandi') || ''} onChange={(event) => setValue('mandi', event.target.value, { shouldValidate: true })} disabled={!selectedVillage || mandiOptions.length === 0} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
+                <option value="" className="bg-emerald-900">{selectedVillage ? 'No mandi suggestions available' : 'Select your village first'}</option>
+                {mandiOptions.map((item) => <option key={item.name} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+              </select>
+              <p className="text-xs text-emerald-200/70">Suggested from your district and taluk. Please confirm the nearest market for your village.</p>
+              {errors.mandi?.message && <p className="text-xs text-red-400">{errors.mandi.message}</p>}
+            </div>
           </div>
         )}
 
