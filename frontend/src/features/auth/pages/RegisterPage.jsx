@@ -55,6 +55,9 @@ export const RegisterPage = () => {
   const selectedTaluk = watch('taluk');
   const selectedVillage = watch('village');
   const agreeToTerms = watch('agreeToTerms');
+  const filteredVillageOptions = villageOptions.filter((item) =>
+    item.name.toLocaleLowerCase().includes(villageSearch.trim().toLocaleLowerCase())
+  );
 
   useEffect(() => {
     let active = true;
@@ -74,24 +77,23 @@ export const RegisterPage = () => {
   }, [selectedDistrict]);
 
   useEffect(() => {
-    if (!selectedDistrict || !selectedTaluk || villageSearch.trim().length < 2) {
+    if (!selectedDistrict || !selectedTaluk) {
       setVillageOptions([]);
       return undefined;
     }
     let active = true;
-    const timeout = window.setTimeout(() => {
-      axiosClient.get('/locations/karnataka/', { params: {
-        level: 'village', district: selectedDistrict, taluk: selectedTaluk, search: villageSearch.trim(),
-      } }).then(({ data }) => {
-        if (active) {
-          setVillageOptions(data.results || []);
-          if (data.data_ready === false) setLocationError('Village data is not installed yet. Run python manage.py sync_karnataka_locations in backend/django.');
-          else setLocationError('');
-        }
-      }).catch(() => { if (active) setLocationError('Could not search villages. Please try again.'); });
-    }, 250);
-    return () => { active = false; window.clearTimeout(timeout); };
-  }, [selectedDistrict, selectedTaluk, villageSearch]);
+    setVillageOptions([]);
+    axiosClient.get('/locations/karnataka/', { params: {
+      level: 'village', district: selectedDistrict, taluk: selectedTaluk,
+    } }).then(({ data }) => {
+      if (active) {
+        setVillageOptions(data.results || []);
+        if (data.data_ready === false) setLocationError('Village data is not installed yet. Run python manage.py sync_karnataka_locations in backend/django.');
+        else setLocationError('');
+      }
+    }).catch(() => { if (active) setLocationError('Could not load villages for this taluk. Please try again.'); });
+    return () => { active = false; };
+  }, [selectedDistrict, selectedTaluk]);
 
   const onFormSubmit = async (data) => {
     setLocalError('');
@@ -209,15 +211,15 @@ export const RegisterPage = () => {
             <input value={villageSearch} disabled={!selectedTaluk} onChange={(event) => {
               setVillageSearch(event.target.value);
               setValue('village', '', { shouldValidate: true });
-            }} placeholder="Type at least 2 letters to search" className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30" />
+            }} placeholder="Search all villages in this taluk" className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30" />
             <select value={selectedVillage || ''} disabled={!selectedTaluk || villageOptions.length === 0} onChange={(event) => {
               setValue('village', event.target.value, { shouldValidate: true });
             }} className="w-full h-11 px-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-white text-sm disabled:opacity-50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30">
-              <option value="" className="bg-emerald-900">{villageOptions.length ? 'Select village' : 'Search results appear here'}</option>
-              {villageOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
+              <option value="" className="bg-emerald-900">{villageOptions.length ? 'Select village' : 'Loading or no villages available'}</option>
+              {filteredVillageOptions.map((item) => <option key={item.code} value={item.name} className="bg-emerald-900">{item.name}</option>)}
             </select>
             {errors.village?.message && <p className="text-xs text-red-400">{errors.village.message}</p>}
-            {villageSearch.trim().length >= 2 && villageOptions.length === 0 && !locationError && <p className="text-xs text-emerald-200/70">No matching villages found for this taluk.</p>}
+            {villageSearch.trim() && filteredVillageOptions.length === 0 && villageOptions.length > 0 && <p className="text-xs text-emerald-200/70">No matching villages found in this taluk.</p>}
           </div>
         </div>
         {locationError && <p role="status" className="text-xs text-amber-300">{locationError}</p>}
