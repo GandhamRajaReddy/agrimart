@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   accounts:
-    name: Django checks and account tests
+    name: Django checks and location/account tests
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -63,5 +63,5 @@ jobs:
         run: python manage.py check
       - name: Check migrations
         run: python manage.py makemigrations --check --dry-run
-      - name: Run account security tests
-        run: python manage.py test apps.accounts
+      - name: Run account and Karnataka location tests
+        run: python manage.py test apps.accounts apps.locations
