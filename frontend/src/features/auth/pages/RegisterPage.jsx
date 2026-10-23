@@ -20,7 +20,7 @@ const INDIAN_STATES = [
 export const RegisterPage = () => {
   const {
     register: registerUser, isRegistering, registerError,
-    verifyOTP, isVerifyingOTP, pendingOTP, requestOTP,
+    verifyOTP, isVerifyingOTP, pendingOTP, requestOTP, cancelPendingOTP,
   } = useAuth();
   const [localError, setLocalError] = useState('');
 
@@ -206,6 +206,7 @@ export const RegisterPage = () => {
 
       <OTPVerificationModal
         isOpen={!!pendingOTP && pendingOTP.mode === 'register'}
+        onClose={() => { cancelPendingOTP(); setLocalError(''); }}
         phone={pendingOTP?.phone || watch('phone')}
         onVerify={handleVerifyOTP}
         onResend={handleResendOTP}
