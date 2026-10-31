@@ -32,10 +32,10 @@ def fertilizer(req:FertilizerRequest):
   logging.exception("Fertilizer inference error"); raise HTTPException(503,"Fertilizer advice unavailable")
  return {"success":True,"data":data,"model":{"name":"harvestify-fertilizer-rules","version":"1.0.0"},"disclaimer":"Informational only; not a dosage prescription."}
 @app.post("/api/v1/disease/predict")
-async def disease(file:UploadFile=File(...)):
+def disease(file:UploadFile=File(...)):
  if registry.disease_model is None: raise HTTPException(503,"Disease model unavailable")
  if file.content_type not in {"image/jpeg","image/png","image/webp"}: raise HTTPException(415,"Upload JPEG, PNG or WebP")
- raw=await file.read(MAX_IMAGE_BYTES+1)
+ raw=file.file.read(MAX_IMAGE_BYTES+1)
  if len(raw)>MAX_IMAGE_BYTES: raise HTTPException(413,"Image exceeds 5 MB")
  try: data=disease_prediction(raw)
  except ValueError: raise HTTPException(422,"Invalid image")
