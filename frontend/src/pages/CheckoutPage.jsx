@@ -179,6 +179,18 @@ export const CheckoutPage = () => {
                   className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white"
                 />
               </div>
+              <div>
+                <label className="text-slate-400 block mb-1">PIN Code</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  maxLength={6}
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value.replace(/\\D/g, '').slice(0, 6))}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                />
+              </div>
             </div>
           </div>
 
