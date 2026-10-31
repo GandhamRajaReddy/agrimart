@@ -12,98 +12,7 @@ import {
 import useCart from '../features/cart/hooks/useCart';
 import axiosClient from '../services/http/axiosClient';
 
-const INITIAL_PRODUCTS = [
-  {
-    id: 'cd62aa4a-9f5c-4d1d-9f7c-c0b56ed58083',
-    name: 'Pioneer Hybrid Mustard Seeds 45S46',
-    category: 'Seeds',
-    price: 480,
-    originalPrice: 550,
-    unit: '1 kg Pack',
-    rating: 4.9,
-    reviewsCount: 142,
-    image: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=80',
-    badge: 'Bestseller',
-    dosageNote: '2.5 kg per acre',
-    targetCrop: 'Mustard',
-    brand: 'Pioneer'
-  },
-  {
-    id: '80e5b90f-3137-484a-93f8-a0a7efd90a8c',
-    name: 'IFFCO Bio NPK Liquid Fertilizer Consortium',
-    category: 'Fertilisers',
-    price: 320,
-    originalPrice: 400,
-    unit: '1 Litre Bottle',
-    rating: 4.8,
-    reviewsCount: 98,
-    image: 'https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=600&auto=format&fit=crop&q=80',
-    badge: 'Eco-Organic',
-    dosageNote: '5 ml per liter of water',
-    targetCrop: 'Wheat & Pulses',
-    brand: 'IFFCO'
-  },
-  {
-    id: '69879241-7ebe-45df-912d-e9c54ec0b28b',
-    name: 'Syngenta Ampligo Insecticide (Chlorantraniliprole)',
-    category: 'Pesticides & Fungicides',
-    price: 890,
-    originalPrice: 1050,
-    unit: '250 ml',
-    rating: 4.7,
-    reviewsCount: 76,
-    image: 'https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=600&auto=format&fit=crop&q=80',
-    badge: 'Popular Crop Care',
-    dosageNote: '100 ml per acre',
-    targetCrop: 'Cotton & Paddy',
-    brand: 'Syngenta'
-  },
-  {
-    id: '4f25e034-fff6-4f30-a513-35db6b0f9346',
-    name: 'Kisan Kraft 16L Battery Operated Knapsack Sprayer',
-    category: 'Farm Machinery',
-    price: 2850,
-    originalPrice: 3400,
-    unit: '1 Set',
-    rating: 4.9,
-    reviewsCount: 210,
-    image: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb1b7a5?w=600&auto=format&fit=crop&q=80',
-    badge: 'Top Rated Tool',
-    dosageNote: 'Dual spray nozzle attachment',
-    targetCrop: 'All',
-    brand: 'Kisan Kraft'
-  },
-  {
-    id: 'bf03a960-3612-4886-9e65-9d0f7ea04303',
-    name: 'Shriram Super Wheat Seeds HD 2967',
-    category: 'Seeds',
-    price: 1250,
-    originalPrice: 1400,
-    unit: '40 kg Bag',
-    rating: 4.8,
-    reviewsCount: 185,
-    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80',
-    badge: 'High Yield',
-    dosageNote: '40 kg per acre',
-    targetCrop: 'Wheat',
-    brand: 'Shriram'
-  },
-  {
-    id: '3e8c327c-2362-456e-a2e7-214c464659f3',
-    name: 'Jain Drip Irrigation Starter Kit for 1 Acre',
-    category: 'Tools & Irrigation',
-    price: 6490,
-    originalPrice: 7800,
-    unit: '1 Acre Kit',
-    rating: 4.9,
-    reviewsCount: 64,
-    image: 'https://images.unsplash.com/photo-1563514227147-6d2ff665a6a0?w=600&auto=format&fit=crop&q=80',
-    badge: 'Water Saver',
-    dosageNote: 'Includes connectors & lateral pipes',
-    targetCrop: 'Sugarcane & Vegetables',
-    brand: 'Jain Irrigation'
-  }
-];
+
 
 export const CatalogPage = () => {
   const { addToCart, isAddingToCart } = useCart();
@@ -137,14 +46,14 @@ export const CatalogPage = () => {
     price: parseFloat(p.price) || 0,
     originalPrice: p.original_price ? parseFloat(p.original_price) : null,
     unit: p.unit || '1 unit',
-    rating: p.rating || 4.8,
-    reviewsCount: p.reviews_count || 50,
+    rating: p.rating ?? null,
+    reviewsCount: p.reviews_count ?? 0,
     image: p.image_url || p.image || 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=80',
-    badge: p.badge || 'Certified',
-    dosageNote: p.description || 'Standard recommended dosage',
+    badge: p.badge || '',
+    dosageNote: p.description || '',
     targetCrop: 'All',
-    brand: 'AgriMart Certified'
-  })) : INITIAL_PRODUCTS;
+    brand: p.brand || ''
+  })) : [];
 
   const filteredProducts = rawProducts.filter(p => {
     const matchCategory = selectedCategory === 'All' || p.category.toLowerCase().includes(selectedCategory.toLowerCase());

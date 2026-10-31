@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from .health import health_check, readiness_check
 from apps.locations.api_views import KarnatakaLocationsView
 from apps.accounts.api_views import (
@@ -27,6 +27,7 @@ from apps.orders.api_views import (
 )
 
 urlpatterns = [
+    path("ml/", include("apps.ml_gateway.urls")),
     # Karnataka-only administrative locations
     path("locations/karnataka/", KarnatakaLocationsView.as_view(), name="karnataka-locations"),
 
