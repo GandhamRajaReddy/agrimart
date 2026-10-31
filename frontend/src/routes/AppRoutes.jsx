@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { CatalogPage } from '../pages/CatalogPage';
 import { AIDetectionPage } from '../pages/AIDetectionPage';
@@ -67,7 +67,7 @@ const RoleDashboard = ({ title, description, links }) => (
       <p className="mt-3 max-w-2xl text-sm text-emerald-100/80">{description}</p>
       <div className="mt-6 flex flex-wrap gap-3">
         {links.map((link) => (
-          <a key={link.href} href={link.href} className="rounded-xl border border-emerald-700/60 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-900/70">
+          <Link key={link.href} to={link.href} className="rounded-xl border border-emerald-700/60 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-900/70">
             {link.label}
           </a>
         ))}
@@ -81,7 +81,7 @@ const Unauthorized = () => (
     <div className="rounded-3xl border border-amber-700/50 bg-amber-950/30 p-8">
       <h1 className="text-2xl font-bold text-white">Access restricted</h1>
       <p className="mt-3 text-sm text-amber-100/80">Your account role does not have access to this workspace.</p>
-      <a href={ROUTES.home} className="mt-5 inline-block font-semibold text-emerald-300 hover:underline">Go to my workspace</a>
+      <Link to={ROUTES.home} className="mt-5 inline-block font-semibold text-emerald-300 hover:underline">Go to my workspace</Link>
     </div>
   </main>
 );
