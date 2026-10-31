@@ -349,3 +349,9 @@ ML_SERVICE_ENABLED = config("ML_SERVICE_ENABLED", default=False, cast=bool)
 ML_SERVICE_URL = config("ML_SERVICE_URL", default="http://127.0.0.1:8100")
 ML_CONNECT_TIMEOUT = config("ML_CONNECT_TIMEOUT", default=2, cast=int)
 ML_READ_TIMEOUT = config("ML_READ_TIMEOUT", default=20, cast=int)
+
+# Market intelligence remains fail-closed until the data pipeline and model pass validation.
+DATA_GOV_IN_API_KEY = config("DATA_GOV_IN_API_KEY", default="")
+MARKET_FORECAST_MODEL_VALIDATED = config(
+    "MARKET_FORECAST_MODEL_VALIDATED", default=False, cast=bool
+)
