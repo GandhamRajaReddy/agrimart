@@ -27,6 +27,7 @@ from apps.orders.api_views import (
 )
 
 urlpatterns = [
+    path("ml/", include("apps.ml_gateway.urls")),
     # Karnataka-only administrative locations
     path("locations/karnataka/", KarnatakaLocationsView.as_view(), name="karnataka-locations"),
 

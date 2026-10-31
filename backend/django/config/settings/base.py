@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "apps.procurement",
     "apps.market",
     "apps.notifications",
+    "apps.ml_gateway",
 ]
 
 
@@ -342,3 +343,9 @@ SPECTACULAR_SETTINGS = {
 # ============================================================
 
 AUTH_USER_MODEL = "accounts.User"
+
+# Optional, isolated ML service gateway
+ML_SERVICE_ENABLED = config("ML_SERVICE_ENABLED", default=False, cast=bool)
+ML_SERVICE_URL = config("ML_SERVICE_URL", default="http://127.0.0.1:8100")
+ML_CONNECT_TIMEOUT = config("ML_CONNECT_TIMEOUT", default=2, cast=int)
+ML_READ_TIMEOUT = config("ML_READ_TIMEOUT", default=20, cast=int)
