@@ -69,7 +69,7 @@ const RoleDashboard = ({ title, description, links }) => (
         {links.map((link) => (
           <Link key={link.href} to={link.href} className="rounded-xl border border-emerald-700/60 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-900/70">
             {link.label}
-          </a>
+          </Link>
         ))}
       </div>
     </div>
