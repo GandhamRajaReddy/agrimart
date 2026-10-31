@@ -24,14 +24,22 @@ export const CheckoutPage = () => {
   const [createdOrder, setCreatedOrder] = useState(null);
 
   // Address fields state
-  const [fullName, setFullName] = useState(user?.first_name ? `${user.first_name} ${user.last_name}`.strip() : 'Rajesh Patel');
-  const [phone, setPhone] = useState(user?.phone || '9876543210');
-  const [addressLine1, setAddressLine1] = useState('Farm House #4');
-  const [district, setDistrict] = useState('Indore');
-  const [state, setState] = useState('Madhya Pradesh');
-  const [pincode, setPincode] = useState('453551');
+  const [fullName, setFullName] = useState([user?.first_name, user?.last_name].filter(Boolean).join(' '));
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [district, setDistrict] = useState(user?.district || '');
+  const [state, setState] = useState(user?.state || 'Karnataka');
+  const [pincode, setPincode] = useState('');
 
   const handlePlaceOrder = async () => {
+    if (!fullName.trim() || !phone.trim() || !addressLine1.trim() || !district.trim() || !state.trim() || !pincode.trim()) {
+      window.alert('Complete all delivery address fields before placing the order.');
+      return;
+    }
+    if (paymentMethod !== 'COD') {
+      window.alert('Online payment is not enabled yet. Select Cash on Delivery.');
+      return;
+    }
     try {
       const payload = {
         shipping_address: {
@@ -212,11 +220,12 @@ export const CheckoutPage = () => {
                     value="ONLINE"
                     checked={paymentMethod === 'ONLINE'}
                     onChange={() => setPaymentMethod('ONLINE')}
+                    disabled
                     className="accent-emerald-500"
                   />
                   <div>
-                    <span className="font-bold text-sm block">Online Payment (UPI / Card / NetBanking)</span>
-                    <span className="text-xs text-slate-400">Secure digital pay</span>
+                    <span className="font-bold text-sm block">Online Payment (not available)</span>
+                    <span className="text-xs text-slate-400">Payment gateway integration is pending.</span>
                   </div>
                 </div>
               </label>
