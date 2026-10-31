@@ -1,25 +1,34 @@
 import axiosClient from "../../../services/http/axiosClient";
 import { homeContent } from "../data/homeContent";
 
+const asList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.results)) return payload.results;
+  return [];
+};
+
 export const homeApi = {
-  async getLandingPage({ locale } = {}) {
-    try {
-      const [categoriesRes, productsRes] = await Promise.all([
-        axiosClient.get("/categories/"),
-        axiosClient.get("/products/featured/"),
-      ]);
+  async getLandingPage() {
+    const [categoriesResult, productsResult] = await Promise.allSettled([
+      axiosClient.get("/categories/"),
+      axiosClient.get("/products/featured/"),
+    ]);
 
-      const categories = categoriesRes.data?.length ? categoriesRes.data : homeContent.categories;
-      const featuredProducts = productsRes.data?.length ? productsRes.data : homeContent.featuredProducts;
+    const categories =
+      categoriesResult.status === "fulfilled"
+        ? asList(categoriesResult.value.data)
+        : [];
+    const featuredProducts =
+      productsResult.status === "fulfilled"
+        ? asList(productsResult.value.data)
+        : [];
 
-      return {
-        ...homeContent,
-        categories,
-        featuredProducts,
-      };
-    } catch (error) {
-      console.warn("[homeApi] Live Django API fallback to local content:", error.message);
-      return homeContent;
-    }
+    return {
+      ...homeContent,
+      categories: categories.length ? categories : homeContent.categories,
+      featuredProducts: featuredProducts.length
+        ? featuredProducts
+        : homeContent.featuredProducts,
+    };
   },
 };
