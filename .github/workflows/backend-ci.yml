@@ -64,4 +64,4 @@ jobs:
       - name: Check migrations
         run: python manage.py makemigrations --check --dry-run
       - name: Run account and Karnataka location tests
-        run: python manage.py test apps.accounts apps.locations
+        run: python manage.py test apps.accounts apps.locations apps.market
