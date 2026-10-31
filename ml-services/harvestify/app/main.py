@@ -14,8 +14,8 @@ app=FastAPI(title="AgriMart Harvestify API",version="1.0.0",lifespan=lifespan)
 def live(): return {"status":"alive","service":"harvestify"}
 @app.get("/health/ready")
 def ready():
- if not registry.ready: return JSONResponse(status_code=503,content={"status":"not_ready","missing_or_failed":registry.errors})
- return {"status":"ready","service":"harvestify"}
+ if not registry.ready: return JSONResponse(status_code=503,content={"status":"degraded","features":registry.features,"missing_or_failed":registry.errors})
+ return {"status":"ready" if all(registry.features.values()) else "degraded","service":"harvestify","features":registry.features}
 @app.post("/api/v1/crop/recommend")
 def crop(req:CropRequest):
  if registry.crop_model is None: raise HTTPException(503,"Crop model unavailable")

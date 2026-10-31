@@ -18,5 +18,13 @@ class Registry:
    except Exception: logger.exception("Disease artifact load failed"); self.errors.append("disease_model_load_failed")
   else: self.errors.append("disease_model_missing")
  @property
- def ready(self): return self.crop_model is not None and self.disease_model is not None
+ def features(self):
+  from app.config import DATA_DIR
+  return {
+   "crop": self.crop_model is not None,
+   "fertilizer": (DATA_DIR/"fertilizer.csv").is_file(),
+   "disease": self.disease_model is not None,
+  }
+ @property
+ def ready(self): return any(self.features.values())
 registry=Registry()
