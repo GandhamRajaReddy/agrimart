@@ -63,14 +63,7 @@ export const CatalogPage = () => {
     return matchCategory && matchCrop && matchSearch;
   });
 
-  const calculateDosageRequirements = () => {
-    const acres = parseFloat(landAcres) || 1;
-    return [
-      { crop: targetCropCalc, item: 'Hybrid Seed Requirement', qty: `${acres * 2} Packets (approx ${acres * 0.95} kg)` },
-      { crop: targetCropCalc, item: 'NPK Base Fertiliser', qty: `${acres * 50} kg Bag` },
-      { crop: targetCropCalc, item: 'Bio-Fungicide Spray', qty: `${(acres * 250).toFixed(0)} ml diluted in ${acres * 150}L water` },
-    ];
-  };
+  const calculateDosageRequirements = () => [];
 
   return (
     <div className="space-y-8 pb-12">
@@ -251,8 +244,9 @@ export const CatalogPage = () => {
             {/* Recommended Results */}
             <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs">
               <h4 className="font-bold text-amber-400 uppercase tracking-wider text-[11px]">
-                Recommended Quantities for {landAcres} Acres of {targetCropCalc}:
+                Agronomic dosage guidance
               </h4>
+              <p className="text-slate-300 leading-relaxed">A validated crop-specific dosage calculator is not connected yet. Follow the product label and local agricultural department guidance; do not use generic quantities.</p>
 
               <div className="space-y-2">
                 {calculateDosageRequirements().map((req, idx) => (
@@ -268,7 +262,7 @@ export const CatalogPage = () => {
               onClick={() => setIsDosageModalOpen(false)}
               className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-950 transition-all"
             >
-              Apply Quantities to Cart
+              Close
             </button>
           </div>
         </div>
