@@ -83,7 +83,7 @@ export const CatalogPage = () => {
           className="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-950 flex items-center gap-2 transition-all"
         >
           <Calculator className="w-4 h-4" />
-          <span>Acreage Dosage Calculator</span>
+          <span>Dosage Guidance</span>
         </button>
       </div>
 
@@ -204,7 +204,7 @@ export const CatalogPage = () => {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-100 text-base">Acreage Dosage Calculator</h3>
-                  <p className="text-xs text-slate-400">Calculate exact inputs needed for your field</p>
+                  <p className="text-xs text-slate-400">Check whether validated crop-specific dosage guidance is available</p>
                 </div>
               </div>
               <button
