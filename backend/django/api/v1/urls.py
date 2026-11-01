@@ -1,4 +1,5 @@
 from django.urls import include, path
+from rest_framework_simplejwt.views import TokenRefreshView
 from .health import health_check, readiness_check
 from apps.locations.api_views import KarnatakaLocationsView
 from apps.accounts.api_views import (
@@ -43,6 +44,8 @@ urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="auth-register"),
     path("auth/me/", UserMeView.as_view(), name="auth-me"),
     path("auth/logout/", LogoutView.as_view(), name="auth-logout"),
+    path("auth/token/refresh/", TokenRefreshView.as_view(), name="auth-token-refresh"),
+    path("auth/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
 
     # Categories & Products API
     path("categories/", CategoryListView.as_view(), name="categories-list"),

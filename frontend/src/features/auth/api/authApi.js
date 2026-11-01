@@ -1,4 +1,5 @@
 import axiosClient from '../../../services/http/axiosClient';
+import tokenService from '../../../services/auth/tokenService';
 
 const getAuthPayload = (data) => ({
   success: data.success ?? true,
@@ -81,19 +82,42 @@ export const authApi = {
     };
   },
 
+  refreshToken: async () => {
+    const currentRefreshToken = tokenService.getRefreshToken();
+    if (!currentRefreshToken) {
+      throw new Error('No refresh token available');
+    }
+    const response = await axiosClient.post('/auth/token/refresh/', {
+      refresh: currentRefreshToken,
+    });
+    const data = response.data;
+    const newAccessToken = data.access || data.token;
+    const newRefreshToken = data.refresh || data.refresh_token;
+    if (newAccessToken) tokenService.setAccessToken(newAccessToken);
+    if (newRefreshToken) tokenService.setRefreshToken(newRefreshToken);
+    return response.data;
+  },
+
   getProfile: async () => {
     const response = await axiosClient.get('/auth/me/');
     return response.data;
   },
 
   logout: async () => {
-    const refreshToken = localStorage.getItem('agrimart_refresh_token');
-    if (!refreshToken) return { success: true };
+    const refreshToken = tokenService.getRefreshToken();
+    if (!refreshToken) {
+      tokenService.clearAuth();
+      return { success: true };
+    }
     try {
       await axiosClient.post('/auth/logout/', { refresh_token: refreshToken });
     } catch {
       // Always clear local auth state even if the API is unavailable.
+    } finally {
+      tokenService.clearAuth();
     }
     return { success: true };
   },
 };
+
+export default authApi;
