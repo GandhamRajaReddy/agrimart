@@ -42,12 +42,6 @@ const NUTRIENT_NAMES = {
   K: 'Potassium (K)',
 };
 
-const NUTRIENT_SOURCES = {
-  N: 'Urea (46% N) or well-rotted farmyard manure (FYM)',
-  P: 'Single Super Phosphate (SSP) or DAP (Diammonium Phosphate)',
-  K: 'Muriate of Potash (MOP) or Sulfate of Potash',
-};
-
 export const FertilizerRecommendationForm = () => {
   const [crop, setCrop] = useState('rice');
   const [nitrogen, setNitrogen] = useState('80');
@@ -97,10 +91,10 @@ export const FertilizerRecommendationForm = () => {
     <div className="space-y-6">
       <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
         <div className="flex items-center gap-2 text-sm font-semibold text-emerald-400 mb-2">
-          <FlaskConical size={18} /> Soil Nutrient Balancing
+          <FlaskConical size={18} /> Crop NPK Reference Comparison
         </div>
         <p className="text-sm text-slate-300">
-          Enter your soil test values (in kg/ha or test index) for Nitrogen, Phosphorus, and Potassium to calculate nutritional deltas against standard crop benchmarks.
+          Compare your N-P-K inputs with the stored crop reference values. The source dataset does not document measurement units, so this is only a relative table comparison—not a soil-test interpretation or fertilizer dosage recommendation.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -120,7 +114,7 @@ export const FertilizerRecommendationForm = () => {
           </label>
 
           <label className="space-y-2 text-sm text-slate-300">
-            <span className="font-semibold text-white">Soil Nitrogen (N)</span>
+            <span className="font-semibold text-white">Nitrogen (N) input</span>
             <input
               type="number"
               min="0"
@@ -135,7 +129,7 @@ export const FertilizerRecommendationForm = () => {
           </label>
 
           <label className="space-y-2 text-sm text-slate-300">
-            <span className="font-semibold text-white">Soil Phosphorus (P)</span>
+            <span className="font-semibold text-white">Phosphorus (P) input</span>
             <input
               type="number"
               min="0"
@@ -150,7 +144,7 @@ export const FertilizerRecommendationForm = () => {
           </label>
 
           <label className="space-y-2 text-sm text-slate-300">
-            <span className="font-semibold text-white">Soil Potassium (K)</span>
+            <span className="font-semibold text-white">Potassium (K) input</span>
             <input
               type="number"
               min="0"
@@ -178,7 +172,7 @@ export const FertilizerRecommendationForm = () => {
               ) : (
                 <>
                   <FlaskConical size={18} />
-                  <span>Analyze Fertilizer Requirements</span>
+                  <span>Compare N-P-K reference values</span>
                 </>
               )}
             </button>
@@ -206,17 +200,17 @@ export const FertilizerRecommendationForm = () => {
               {status === 'balanced' ? (
                 <>
                   <CheckCircle2 size={22} className="text-emerald-400" />
-                  <span>Balanced Soil Profile</span>
+                  <span>Matches reference profile</span>
                 </>
               ) : status === 'low' ? (
                 <>
                   <TrendingDown size={22} className="text-amber-400" />
-                  <span>Nutrient Deficit Detected</span>
+                  <span>Below reference value</span>
                 </>
               ) : (
                 <>
                   <TrendingUp size={22} className="text-blue-400" />
-                  <span>Nutrient Surplus Detected</span>
+                  <span>Above reference value</span>
                 </>
               )}
             </div>
@@ -228,7 +222,7 @@ export const FertilizerRecommendationForm = () => {
                 ? 'bg-amber-900/60 text-amber-300 border border-amber-700/50'
                 : 'bg-blue-900/60 text-blue-300 border border-blue-700/50'
             }`}>
-              {status === 'balanced' ? 'Optimal N-P-K' : status === 'low' ? `${nutrientCode} Deficient` : `${nutrientCode} Excess`}
+              {status === 'balanced' ? 'Matches reference' : status === 'low' ? `${nutrientCode} below reference` : `${nutrientCode} above reference`}
             </span>
           </div>
 
@@ -239,7 +233,7 @@ export const FertilizerRecommendationForm = () => {
             </div>
 
             <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Key Limiting Nutrient</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Largest reference difference</span>
               <p className="mt-1 text-lg font-bold text-white">{nutrientLabel}</p>
             </div>
 
@@ -248,28 +242,28 @@ export const FertilizerRecommendationForm = () => {
               <p className={`mt-1 text-lg font-bold ${
                 delta > 0 ? 'text-amber-300' : delta < 0 ? 'text-blue-300' : 'text-emerald-300'
               }`}>
-                {delta > 0 ? `+${delta} deficit` : delta < 0 ? `${delta} surplus` : '0 (Aligned)'}
+                {delta > 0 ? `${delta} below reference` : delta < 0 ? `${Math.abs(delta)} above reference` : '0 (Aligned)'}
               </p>
             </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-xs leading-5 text-slate-300">
             <div className="flex items-center gap-1.5 font-semibold text-slate-200 mb-1">
-              <Info size={14} className="text-emerald-400" /> Agronomic Guidance
+              <Info size={14} className="text-emerald-400" /> Reference comparison
             </div>
             {status === 'low' && (
               <p>
-                Soil {nutrientLabel} is below standard requirements for {adviceData.crop}. Recommended input source: <strong className="text-white">{NUTRIENT_SOURCES[nutrientCode] || 'Approved commercial fertilizer'}</strong>. Split application across crop growth stages for optimal uptake.
+                The entered {nutrientLabel} value is below the stored reference value for {adviceData.crop}. This comparison does not establish a soil deficiency. Confirm the measurement basis and obtain a local soil-test interpretation before applying fertilizer.
               </p>
             )}
             {status === 'high' && (
               <p>
-                Soil {nutrientLabel} is above standard requirements. Avoid additional {nutrientCode} application during basal dressing to prevent leaching and unnecessary cost.
+                The entered {nutrientLabel} value is above the stored reference value. This comparison does not establish nutrient excess or justify changing an application plan.
               </p>
             )}
             {status === 'balanced' && (
               <p>
-                Soil N-P-K levels are well proportioned for {adviceData.crop}. Maintain organic matter and monitor periodically through crop tillering or vegetative stages.
+                The entered N-P-K values align with the stored reference row for {adviceData.crop}. This is not a diagnosis of soil condition or a crop-stage fertilizer plan.
               </p>
             )}
           </div>
