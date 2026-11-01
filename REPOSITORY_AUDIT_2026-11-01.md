@@ -21,7 +21,7 @@ No production recommendation or price forecast should be enabled merely by setti
 
 **Risk:** A production deployment missing its secret environment variable could start with a publicly known signing key.
 
-**Required remediation:** Make production settings fail at startup if the secret is missing, still equals the development fallback, or is otherwise invalid. Keep the fallback limited to local development settings.
+**Branch remediation:** Implemented in `backend/django/config/settings/production.py` on this audit branch. Production settings now raise `ImproperlyConfigured` if the configured key is missing/empty or equals the known development fallback. Commit: `bf2e3af9efb56b623166b3fba05f20a1ea59a922`. This change has not yet been executed in CI or a production-like environment.
 
 ### P1 — Market intelligence has no persisted market data or ingestion pipeline
 
@@ -105,3 +105,10 @@ No production recommendation or price forecast should be enabled merely by setti
 ## Audit limitations
 
 This is a source-tree and targeted-file audit of the audited commit. No repository checkout was executed in a local runtime, no CI workflow was run, no production environment was inspected, and no live AGMARKNET/data.gov.in credentials or source records were available. Findings about deploy-time dependency installation are therefore conditional on the deployment command. This report does not certify production readiness.
+
+
+## Changes made on the audit branch
+
+- Added this audit report.
+- Added a production-startup guard that rejects the known development Django signing-key fallback.
+- No market ingestion, forecast, or profitability endpoint has been enabled because verified source records and the required model-validation evidence are not present in the repository.
