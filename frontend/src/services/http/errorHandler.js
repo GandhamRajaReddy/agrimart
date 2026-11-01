@@ -25,3 +25,4 @@ export const getErrorMessage = (error, fallbackMessage = 'An unexpected error oc
 };
 
 export default { getErrorMessage };
+

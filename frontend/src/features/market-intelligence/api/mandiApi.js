@@ -6,3 +6,4 @@ export const getMarketStatus = async () => {
 };
 
 export default { getMarketStatus };
+

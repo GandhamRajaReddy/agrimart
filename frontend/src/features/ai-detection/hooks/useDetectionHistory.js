@@ -8,3 +8,4 @@ export const useDetectionHistory = () => {
 };
 
 export default useDetectionHistory;
+

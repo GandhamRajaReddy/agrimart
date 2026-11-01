@@ -6,3 +6,4 @@ export const getPriceForecast = async () => {
 };
 
 export default { getPriceForecast };
+

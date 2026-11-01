@@ -9,3 +9,4 @@ export const getAuthHeader = () => {
 };
 
 export default { getAuthHeader };
+

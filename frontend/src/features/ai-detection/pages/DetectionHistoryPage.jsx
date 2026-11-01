@@ -23,3 +23,4 @@ export const DetectionHistoryPage = () => {
 };
 
 export default DetectionHistoryPage;
+

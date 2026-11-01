@@ -31,3 +31,4 @@ export const useDetection = () => {
 };
 
 export default useDetection;
+

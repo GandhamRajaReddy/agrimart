@@ -6,3 +6,4 @@ export { default as CropRecommendationPage } from './pages/CropRecommendationPag
 export { default as ProfitabilityPage } from './pages/ProfitabilityPage';
 export { default as YieldPredictionPage } from './pages/YieldPredictionPage';
 export { default as FertilizerRecommendationForm } from './components/FertilizerRecommendationForm';
+

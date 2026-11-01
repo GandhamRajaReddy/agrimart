@@ -5,3 +5,4 @@ export const getPrices = async () => {
 };
 
 export default { getPrices };
+

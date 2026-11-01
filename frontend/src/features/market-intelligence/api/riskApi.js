@@ -5,3 +5,4 @@ export const getMarketRisk = async () => {
 };
 
 export default { getMarketRisk };
+

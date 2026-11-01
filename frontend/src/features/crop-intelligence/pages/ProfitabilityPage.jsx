@@ -26,3 +26,4 @@ export const ProfitabilityPage = () => {
 };
 
 export default ProfitabilityPage;
+

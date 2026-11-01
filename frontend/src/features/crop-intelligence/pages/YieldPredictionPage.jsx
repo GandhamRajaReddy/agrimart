@@ -25,3 +25,4 @@ export const YieldPredictionPage = () => {
 };
 
 export default YieldPredictionPage;
+

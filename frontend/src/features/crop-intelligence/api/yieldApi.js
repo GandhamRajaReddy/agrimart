@@ -7,3 +7,4 @@ export const getYieldPrediction = async () => {
 };
 
 export default { getYieldPrediction };
+
