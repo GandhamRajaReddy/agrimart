@@ -6,7 +6,12 @@ from rest_framework.views import APIView
 
 from . import client
 from .client import MLServiceUnavailable
-from .serializers import CropSerializer, DiseaseSerializer, FertilizerSerializer
+from .serializers import (
+    CropSerializer,
+    CropDemoRankSerializer,
+    DiseaseSerializer,
+    FertilizerSerializer,
+)
 
 
 def unavailable():
@@ -31,6 +36,18 @@ class CropView(APIView):
         serializer.is_valid(raise_exception=True)
         try:
             return Response(client.crop(serializer.validated_data))
+        except MLServiceUnavailable:
+            return unavailable()
+
+
+class CropDemoRankView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CropDemoRankSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            return Response(client.crop_demo_rank(serializer.validated_data))
         except MLServiceUnavailable:
             return unavailable()
 

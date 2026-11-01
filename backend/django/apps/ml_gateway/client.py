@@ -31,6 +31,10 @@ def crop(payload):
     return call_ml("POST", "/api/v1/crop/recommend", json=payload)
 
 
+def crop_demo_rank(payload):
+    return call_ml("POST", "/api/v1/crop/demo-rank", json=payload)
+
+
 def fertilizer(payload):
     return call_ml("POST", "/api/v1/fertilizer/recommend", json=payload)
 
