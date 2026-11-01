@@ -47,9 +47,9 @@ The script excludes target-derived fields, including recommended_crop_label, bes
 
 After training, restart Harvestify. The authenticated Django gateway exposes:
 
-POST /api/v1/ml/crop/recommend/
+POST /api/v1/ml/crop/demo-rank/
 
-The gateway forwards the structured request to Harvestify POST /api/v1/crop/recommend. The request includes farmer context and one to ten candidate crops with their candidate-level crop/market attributes. The response returns candidate ranking scores and an explicit synthetic/demo-only warning.
+The gateway forwards the structured request to Harvestify POST /api/v1/crop/demo-rank. The demo request includes context and one to ten candidate crops with their candidate-level crop/market attributes. The response returns candidate ranking scores and an explicit synthetic/demo-only warning. The existing /ml/crop/recommend/ production-style endpoint remains fail-closed and does not serve this synthetic model.
 
 The request fields must be supplied from measured or otherwise verified sources in any future production integration. Do not substitute guessed soil values, market prices, weather, or mandi statistics.
 
