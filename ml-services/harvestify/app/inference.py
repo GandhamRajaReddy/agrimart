@@ -75,3 +75,40 @@ def disease_prediction(raw):
         "classification": DISEASE_CLASSES[int(index.item())],
         "confidence": round(float(score.item()), 4),
     }
+
+def crop_benchmark_prediction(request):
+    if registry.crop_benchmark_model is None:
+        raise RuntimeError("crop_benchmark_model_unavailable")
+    payload = request.model_dump() if hasattr(request, "model_dump") else dict(request)
+    feature_values = {
+        "N": payload["nitrogen"],
+        "P": payload["phosphorus"],
+        "K": payload["potassium"],
+        "temperature": payload["temperature"],
+        "humidity": payload["humidity"],
+        "ph": payload["ph"],
+        "rainfall": payload["rainfall"],
+    }
+    frame = pd.DataFrame([feature_values], columns=[
+        "N", "P", "K", "temperature", "humidity", "ph", "rainfall",
+    ])
+    probabilities = registry.crop_benchmark_model.predict_proba(frame)[0]
+    classes = registry.crop_benchmark_model.classes_
+    ranked = sorted(
+        [
+            {"crop": str(label), "benchmark_score": round(float(score), 4)}
+            for label, score in zip(classes, probabilities)
+        ],
+        key=lambda item: (-item["benchmark_score"], item["crop"]),
+    )
+    return {
+        "prediction": ranked[0]["crop"],
+        "top_predictions": ranked[:3],
+        "dataset_source": "PUBLIC_KAGGLE_BENCHMARK",
+        "benchmark_only": True,
+        "production_recommendations_enabled": False,
+        "message": (
+            "Prediction from a public benchmark dataset. It is not validated for "
+            "Karnataka field conditions and must not be used as standalone crop advice."
+        ),
+    }

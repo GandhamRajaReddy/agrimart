@@ -40,6 +40,18 @@ class CropView(APIView):
             return unavailable()
 
 
+class CropBenchmarkView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CropSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            return Response(client.crop_benchmark_predict(serializer.validated_data))
+        except MLServiceUnavailable:
+            return unavailable()
+
+
 class CropDemoRankView(APIView):
     permission_classes = [IsAuthenticated]
 
