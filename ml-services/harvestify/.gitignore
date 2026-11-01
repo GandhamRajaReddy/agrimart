@@ -5,3 +5,8 @@ __pycache__/
 models/**/*.pkl
 models/**/*.pth
 models/**/*.pt
+
+# Local datasets and generated model artifacts are not committed.
+data/training/*
+!data/training/.gitkeep
+models/**/*.joblib
