@@ -1,4 +1,15 @@
+from django.core.exceptions import ImproperlyConfigured
+
 from .base import *
+
+
+# Production must never run with the development-only signing key.
+_DEVELOPMENT_SECRET_KEY = "django-insecure-development-key-change-this"
+if not SECRET_KEY or SECRET_KEY == _DEVELOPMENT_SECRET_KEY:
+    raise ImproperlyConfigured(
+        "DJANGO_SECRET_KEY must be explicitly configured with a unique "
+        "production secret before starting AgriMart in production."
+    )
 
 
 DEBUG = False
