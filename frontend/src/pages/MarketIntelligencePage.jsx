@@ -106,6 +106,9 @@ const MarketIntelligencePage = () => {
               </div>
               <p className="mt-3 text-lg font-bold text-white">{status.data_source}</p>
               <p className="mt-1 text-xs text-slate-400">Target region: {status.region}</p>
+              <p className="mt-2 text-xs text-slate-300">
+                Historical records: {status.historical_data_available ? "Available" : "Not yet ingested"}
+              </p>
               <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-300">
                 {status.data_source_configured ? (
                   <>
