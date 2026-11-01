@@ -1,6 +1,7 @@
 import logging
 
 import joblib
+import sklearn
 import torch
 
 from app.config import MODEL_DIR
@@ -33,6 +34,11 @@ class Registry:
                 metadata = artifact["metadata"]
                 if metadata.get("dataset_source") != "SYNTHETIC" or not metadata.get("demo_only"):
                     raise ValueError("Crop ranker metadata is missing its synthetic/demo-only marker.")
+                if metadata.get("scikit_learn_version") != sklearn.__version__:
+                    raise ValueError(
+                        "Crop artifact scikit-learn version mismatch: "
+                        f"artifact={metadata.get('scikit_learn_version')}, runtime={sklearn.__version__}. Retrain the model."
+                    )
                 self.crop_model = pipeline
                 self.crop_metadata = metadata
                 self.crop_feature_columns = list(metadata["feature_columns"])
