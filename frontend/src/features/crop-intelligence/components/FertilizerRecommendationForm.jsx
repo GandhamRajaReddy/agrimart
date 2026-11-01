@@ -172,7 +172,7 @@ export const FertilizerRecommendationForm = () => {
               ) : (
                 <>
                   <FlaskConical size={18} />
-                  <span>Analyze Fertilizer Requirements</span>
+                  <span>Compare N-P-K reference values</span>
                 </>
               )}
             </button>
