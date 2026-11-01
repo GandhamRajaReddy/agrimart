@@ -13,6 +13,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
@@ -192,6 +193,7 @@ def main() -> int:
         "feature_columns": FEATURES,
         "trained_test_year": args.test_year,
         "scope": metrics["scope"],
+        "scikit_learn_version": sklearn.__version__,
     }}, MODEL_PATH)
     METRICS_PATH.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     print(json.dumps({
