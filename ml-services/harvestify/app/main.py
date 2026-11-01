@@ -41,7 +41,7 @@ def ready():
             },
         )
     return {
-        "status": "ready" if all(registry.features.values()) else "degraded",
+        "status": "ready" if all(v for k, v in registry.features.items() if k != "crop") else "degraded",
         "service": "harvestify",
         "features": registry.features,
     }

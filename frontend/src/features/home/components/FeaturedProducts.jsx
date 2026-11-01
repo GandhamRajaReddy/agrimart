@@ -1,7 +1,6 @@
 import { Droplets, Leaf, ShoppingBag, Sparkles, Sprout, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import bannerImage from "../../../assets/images/banners/background_image.png";
 import Badge from "../../../components/common/Badge";
 import Button from "../../../components/common/Button";
 import { useCart } from "../../cart/hooks/useCart";

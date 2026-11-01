@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link,  } from 'react-router-dom';
 import { 
-  ShieldCheck, 
   CreditCard, 
   MapPin, 
   CheckCircle2, 
   ArrowLeft, 
-  Truck, 
-  ShoppingBag,
   Loader2
 } from 'lucide-react';
 import useCart from '../features/cart/hooks/useCart';
@@ -15,10 +12,9 @@ import useCheckout from '../features/checkout/hooks/useCheckout';
 import { useAuth } from '../features/auth/hooks/useAuth';
 
 export const CheckoutPage = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const { cart, items, subtotal, deliveryFee, total, itemCount, clearCart } = useCart();
-  const { addresses, summary, placeOrder, isPlacingOrder } = useCheckout();
+  const { items, subtotal, deliveryFee, total, itemCount } = useCart();
+  const { placeOrder, isPlacingOrder } = useCheckout();
 
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [createdOrder, setCreatedOrder] = useState(null);

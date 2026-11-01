@@ -4,10 +4,8 @@ import {
   Search, 
   ShoppingCart, 
   Calculator, 
-  Star, 
   X, 
   Leaf,
-  Loader2
 } from 'lucide-react';
 import useCart from '../features/cart/hooks/useCart';
 import axiosClient from '../services/http/axiosClient';

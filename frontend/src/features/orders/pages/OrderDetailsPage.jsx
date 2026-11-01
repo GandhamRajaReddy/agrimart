@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, CreditCard, ShieldCheck, Clock, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, Loader2, AlertCircle } from 'lucide-react';
 import { useOrderDetail } from '../hooks/useOrders';
 
 export const OrderDetailsPage = () => {

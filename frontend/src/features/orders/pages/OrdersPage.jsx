@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Clock, CheckCircle, XCircle, ArrowRight, ShoppingBag, Loader2 } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Loader2 } from 'lucide-react';
 import { useOrders } from '../hooks/useOrders';
 
 export const OrdersPage = () => {

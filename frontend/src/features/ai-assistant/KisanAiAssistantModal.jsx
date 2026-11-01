@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Send, Bot, User, Sparkles, Sprout, ShieldAlert, Cpu, ExternalLink } from 'lucide-react';
+import { X, Send, Bot, User, Sparkles } from 'lucide-react';
 
 export const KisanAiAssistantModal = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([

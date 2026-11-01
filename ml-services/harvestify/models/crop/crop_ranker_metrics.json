@@ -1,0 +1,112 @@
+{
+  "dataset": "agrimart_synthetic_market_mandi_intelligence.xlsx",
+  "dataset_source": "SYNTHETIC",
+  "demo_only": true,
+  "production_recommendations_enabled": false,
+  "scope": "Karnataka",
+  "train_years": [
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "test_year": 2025,
+  "train_rows": 224,
+  "test_rows": 56,
+  "train_groups": 48,
+  "test_groups": 12,
+  "positive_rate_train": 0.21428571428571427,
+  "positive_rate_test": 0.21428571428571427,
+  "row_metrics": {
+    "accuracy": 0.8571428571428571,
+    "balanced_accuracy": 0.6666666666666666,
+    "precision": 1.0,
+    "recall": 0.3333333333333333,
+    "roc_auc": 0.7973484848484849,
+    "average_precision": 0.6476558572146808,
+    "confusion_matrix": [
+      [
+        44,
+        0
+      ],
+      [
+        8,
+        4
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 0.8461538461538461,
+        "recall": 1.0,
+        "f1-score": 0.9166666666666666,
+        "support": 44.0
+      },
+      "1": {
+        "precision": 1.0,
+        "recall": 0.3333333333333333,
+        "f1-score": 0.5,
+        "support": 12.0
+      },
+      "accuracy": 0.8571428571428571,
+      "macro avg": {
+        "precision": 0.9230769230769231,
+        "recall": 0.6666666666666666,
+        "f1-score": 0.7083333333333333,
+        "support": 56.0
+      },
+      "weighted avg": {
+        "precision": 0.8791208791208792,
+        "recall": 0.8571428571428571,
+        "f1-score": 0.8273809523809523,
+        "support": 56.0
+      }
+    }
+  },
+  "group_metrics": {
+    "groups_evaluated": 12,
+    "group_top_1_hit_rate": 0.5,
+    "group_top_3_hit_rate": 0.8333333333333334
+  },
+  "feature_columns": [
+    "year",
+    "month",
+    "latitude",
+    "longitude",
+    "rainfall_mm",
+    "temperature_c",
+    "humidity_pct",
+    "soil_ph",
+    "organic_carbon_pct",
+    "nitrogen_kg_ha",
+    "phosphorus_kg_ha",
+    "potassium_kg_ha",
+    "soil_moisture_pct",
+    "crop_duration_days",
+    "mandi_modal_price_inr_qtl",
+    "price_volatility_30d_pct",
+    "mandi_arrivals_qtl_day",
+    "demand_index_0_1",
+    "nearest_mandi_distance_km",
+    "competitor_crop_area_ha",
+    "state",
+    "district",
+    "season",
+    "crop",
+    "climate_zone",
+    "irrigation_type",
+    "water_requirement"
+  ],
+  "excluded_leakage_columns": [
+    "agronomic_market_score",
+    "best_crop_for_district_season",
+    "estimated_cost_inr_ha",
+    "estimated_net_return_inr_ha",
+    "expected_yield_kg_ha",
+    "gross_revenue_inr_ha",
+    "net_margin_pct",
+    "recommendation_rank",
+    "recommended_crop_label",
+    "record_id"
+  ],
+  "warning": "Metrics measure agreement with a synthetic simulator-generated label, not real-world agronomic accuracy, yield, or profitability."
+}
