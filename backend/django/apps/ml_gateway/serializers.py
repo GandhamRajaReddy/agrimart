@@ -1,6 +1,17 @@
 from rest_framework import serializers
 
 
+class CropSerializer(serializers.Serializer):
+    # Existing legacy contract retained; production crop inference remains fail-closed.
+    nitrogen = serializers.FloatField(min_value=0, max_value=300)
+    phosphorus = serializers.FloatField(min_value=0, max_value=300)
+    potassium = serializers.FloatField(min_value=0, max_value=300)
+    temperature = serializers.FloatField(min_value=-10, max_value=60)
+    humidity = serializers.FloatField(min_value=0, max_value=100)
+    ph = serializers.FloatField(min_value=0, max_value=14)
+    rainfall = serializers.FloatField(min_value=0, max_value=10000)
+
+
 class CropCandidateSerializer(serializers.Serializer):
     crop = serializers.CharField(min_length=1, max_length=80)
     crop_duration_days = serializers.IntegerField(min_value=1, max_value=500)
@@ -13,7 +24,7 @@ class CropCandidateSerializer(serializers.Serializer):
     competitor_crop_area_ha = serializers.FloatField(min_value=0, max_value=100000000)
 
 
-class CropSerializer(serializers.Serializer):
+class CropDemoRankSerializer(serializers.Serializer):
     state = serializers.CharField(min_length=2, max_length=80)
     district = serializers.CharField(min_length=2, max_length=80)
     year = serializers.IntegerField(min_value=2000, max_value=2100)
