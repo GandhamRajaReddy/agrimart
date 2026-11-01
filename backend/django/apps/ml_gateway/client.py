@@ -27,6 +27,10 @@ def call_ml(method, path, **kwargs):
         raise MLServiceUnavailable("ML service unavailable or returned invalid JSON") from exc
 
 
+def crop(payload):
+    return call_ml("POST", "/api/v1/crop/recommend", json=payload)
+
+
 def fertilizer(payload):
     return call_ml("POST", "/api/v1/fertilizer/recommend", json=payload)
 

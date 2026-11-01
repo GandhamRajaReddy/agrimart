@@ -1,24 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit';
+import tokenService from '../../services/auth/tokenService';
 
-const getInitialUser = () => {
-  try {
-    const savedUser = localStorage.getItem('agrimart_user');
-    if (savedUser) return JSON.parse(savedUser);
-  } catch (error) {
-    console.error('Failed to parse saved user state:', error);
-  }
-  return null;
-};
-
-const initialUser = getInitialUser();
-const initialToken = localStorage.getItem('agrimart_token') || null;
-const initialRefreshToken = localStorage.getItem('agrimart_refresh_token') || null;
+const initialUser = tokenService.getUser();
+const initialToken = tokenService.getAccessToken();
+const initialRefreshToken = tokenService.getRefreshToken();
+const initialIsAuthenticated = tokenService.isAuthenticated();
 
 const initialState = {
   user: initialUser,
   token: initialToken,
   refreshToken: initialRefreshToken,
-  isAuthenticated: !!(initialUser && initialToken),
+  isAuthenticated: initialIsAuthenticated,
   pendingOTP: null,
   isLoading: false,
   error: null,
@@ -34,15 +26,11 @@ export const authSlice = createSlice({
       state.user = user;
       state.token = token;
       if (refreshToken) state.refreshToken = refreshToken;
-      state.isAuthenticated = !!(user && token);
+      state.isAuthenticated = Boolean(user && (token || refreshToken));
       state.pendingOTP = null;
       state.error = null;
 
-      if (token) localStorage.setItem('agrimart_token', token);
-      if (refreshToken) {
-        localStorage.setItem('agrimart_refresh_token', refreshToken);
-      }
-      if (user) localStorage.setItem('agrimart_user', JSON.stringify(user));
+      tokenService.setAuth({ token, refreshToken, user });
     },
 
     setPendingOTP: (state, action) => {
@@ -55,7 +43,7 @@ export const authSlice = createSlice({
 
     updateUser: (state, action) => {
       state.user = { ...state.user, ...action.payload };
-      if (state.user) localStorage.setItem('agrimart_user', JSON.stringify(state.user));
+      tokenService.setUser(state.user);
     },
 
     setLanguage: (state, action) => {
@@ -77,9 +65,7 @@ export const authSlice = createSlice({
       state.isAuthenticated = false;
       state.pendingOTP = null;
       state.error = null;
-      localStorage.removeItem('agrimart_token');
-      localStorage.removeItem('agrimart_refresh_token');
-      localStorage.removeItem('agrimart_user');
+      tokenService.clearAuth();
     },
   },
 });
