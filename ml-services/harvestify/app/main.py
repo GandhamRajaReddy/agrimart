@@ -5,7 +5,12 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
 from app.config import MAX_IMAGE_BYTES
-from app.inference import crop_prediction, fertilizer_prediction, disease_prediction
+from app.inference import (
+    crop_prediction,
+    crop_benchmark_prediction,
+    fertilizer_prediction,
+    disease_prediction,
+)
 from app.model_registry import registry
 from app.schemas import CropRequest, CropDemoRankRequest, FertilizerRequest
 
@@ -44,12 +49,28 @@ def ready():
 
 @app.post("/api/v1/crop/recommend")
 def crop(req: CropRequest):
-    # Keep the production-style endpoint fail-closed. The workbook supplied
-    # for this experiment is synthetic and cannot enable farmer recommendations.
+    # Public benchmark data is not sufficient to enable farmer-facing advice.
     raise HTTPException(
         status_code=503,
-        detail="Production crop recommendations require verified data and independent model validation.",
+        detail="Production crop recommendations require verified regional data and independent field validation.",
     )
+
+
+@app.post("/api/v1/crop/benchmark-predict")
+def crop_benchmark(req: CropRequest):
+    if registry.crop_benchmark_model is None:
+        raise HTTPException(503, "Crop benchmark model unavailable; train it from the validated public dataset.")
+    try:
+        data = crop_benchmark_prediction(req)
+    except Exception:
+        logging.exception("Crop benchmark inference error")
+        raise HTTPException(503, "Crop benchmark prediction unavailable")
+    return {
+        "success": True,
+        "data": data,
+        "model": {"name": "agrimart-crop-recommendation-benchmark", "version": "1.0.0"},
+        "disclaimer": "Public benchmark demonstration only; not Karnataka-validated agronomic advice.",
+    }
 
 
 @app.post("/api/v1/crop/demo-rank")
