@@ -71,7 +71,11 @@ class Registry:
     def features(self):
         from app.config import DATA_DIR
         return {
-            "crop": self.crop_model is not None,
+            "crop": (
+                self.crop_model is not None
+                and self.crop_metadata.get("production_recommendations_enabled") is True
+            ),
+            "crop_demo": self.crop_model is not None,
             "fertilizer": (DATA_DIR / "fertilizer.csv").is_file(),
             "disease": self.disease_model is not None,
         }
