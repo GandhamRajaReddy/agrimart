@@ -1,3 +1,4 @@
+import json
 import logging
 
 import joblib
@@ -9,12 +10,18 @@ from app.disease_model import ResNet9, DISEASE_CLASSES
 
 logger = logging.getLogger(__name__)
 
+CROP_BENCHMARK_FEATURES = [
+    "N", "P", "K", "temperature", "humidity", "ph", "rainfall",
+]
+
 
 class Registry:
     def __init__(self):
         self.crop_model = None
         self.crop_metadata = {}
         self.crop_feature_columns = []
+        self.crop_benchmark_model = None
+        self.crop_benchmark_metadata = {}
         self.disease_model = None
         self.errors = []
 
@@ -23,8 +30,12 @@ class Registry:
         self.crop_model = None
         self.crop_metadata = {}
         self.crop_feature_columns = []
+        self.crop_benchmark_model = None
+        self.crop_benchmark_metadata = {}
         crop = MODEL_DIR / "crop" / "crop_ranker.joblib"
         legacy_crop = MODEL_DIR / "crop" / "RandomForest.pkl"
+        benchmark_crop = MODEL_DIR / "crop" / "crop_recommendation_pipeline.joblib"
+        benchmark_metadata = MODEL_DIR / "crop" / "crop_recommendation_metadata.json"
         disease = MODEL_DIR / "disease" / "plant_disease_model.pth"
 
         if crop.is_file():
@@ -36,7 +47,7 @@ class Registry:
                     raise ValueError("Crop ranker metadata is missing its synthetic/demo-only marker.")
                 if metadata.get("scikit_learn_version") != sklearn.__version__:
                     raise ValueError(
-                        "Crop artifact scikit-learn version mismatch: "
+                        "Crop ranker scikit-learn version mismatch: "
                         f"artifact={metadata.get('scikit_learn_version')}, runtime={sklearn.__version__}. Retrain the model."
                     )
                 self.crop_model = pipeline
@@ -48,11 +59,40 @@ class Registry:
         elif legacy_crop.is_file():
             logger.warning(
                 "Ignoring legacy RandomForest.pkl: it was serialized with an incompatible "
-                "scikit-learn version. Retrain from the supplied workbook."
+                "scikit-learn version. Retrain the model."
             )
             self.errors.append("legacy_crop_artifact_incompatible")
         else:
             self.errors.append("crop_model_missing")
+
+        if benchmark_crop.is_file() and benchmark_metadata.is_file():
+            try:
+                artifact = joblib.load(benchmark_crop)
+                pipeline = artifact["pipeline"]
+                embedded_metadata = artifact["metadata"]
+                metadata = json.loads(benchmark_metadata.read_text(encoding="utf-8"))
+                if metadata != embedded_metadata:
+                    raise ValueError("Crop benchmark metadata does not match the model artifact.")
+                if metadata.get("dataset_source") != "PUBLIC_KAGGLE_BENCHMARK":
+                    raise ValueError("Crop benchmark dataset source marker is invalid.")
+                if metadata.get("benchmark_only") is not True:
+                    raise ValueError("Crop benchmark artifact must be explicitly marked benchmark-only.")
+                if metadata.get("production_recommendations_enabled") is not False:
+                    raise ValueError("Benchmark artifact cannot enable production recommendations.")
+                if metadata.get("feature_columns") != CROP_BENCHMARK_FEATURES:
+                    raise ValueError("Crop benchmark feature schema does not match the API contract.")
+                if metadata.get("scikit_learn_version") != sklearn.__version__:
+                    raise ValueError(
+                        "Crop benchmark scikit-learn version mismatch: "
+                        f"artifact={metadata.get('scikit_learn_version')}, runtime={sklearn.__version__}. Retrain the model."
+                    )
+                self.crop_benchmark_model = pipeline
+                self.crop_benchmark_metadata = metadata
+            except Exception:
+                logger.exception("Crop benchmark artifact load failed")
+                self.errors.append("crop_benchmark_model_load_failed")
+        elif benchmark_crop.exists() or benchmark_metadata.exists():
+            self.errors.append("crop_benchmark_artifact_incomplete")
 
         if disease.is_file():
             try:
@@ -71,10 +111,9 @@ class Registry:
     def features(self):
         from app.config import DATA_DIR
         return {
-            "crop": (
-                self.crop_model is not None
-                and self.crop_metadata.get("production_recommendations_enabled") is True
-            ),
+            # A public benchmark artifact is deliberately not production-ready.
+            "crop": False,
+            "crop_benchmark": self.crop_benchmark_model is not None,
             "crop_demo": self.crop_model is not None,
             "fertilizer": (DATA_DIR / "fertilizer.csv").is_file(),
             "disease": self.disease_model is not None,
