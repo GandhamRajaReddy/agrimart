@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Menu, ShoppingBag, Sparkles, X, User, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
+import { Menu, ShoppingBag, Sparkles, X, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
+import { useDispatch } from "react-redux";
 
 import { ROUTES } from "../config/routes";
 import { mobileQuickLinks, primaryNavigation } from "../routes/routeConfig";

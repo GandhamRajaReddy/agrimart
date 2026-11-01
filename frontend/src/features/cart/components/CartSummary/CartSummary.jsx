@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ShieldCheck, Truck } from "lucide-react";
 import Button from "../../../../components/common/Button";
 
-export const CartSummary = ({ subtotal = 0, deliveryFee = 0, total = 0, onCheckout }) => {
+export const CartSummary = ({ subtotal = 0, deliveryFee = 0, total = 0 }) => {
   const isFreeDelivery = deliveryFee === 0 && subtotal > 0;
 
   return (

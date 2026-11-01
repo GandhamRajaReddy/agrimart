@@ -1,0 +1,96 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: agrimart-db
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-agrimart}
+      POSTGRES_USER: ${DATABASE_USER:-agrimart}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-agrimart_secure_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-agrimart} -d ${DATABASE_NAME:-agrimart}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - agrimart-net
+
+  ml-service:
+    build:
+      context: ./ml-services/harvestify
+      dockerfile: Dockerfile
+    container_name: agrimart-ml-service
+    volumes:
+      - ./ml-services/harvestify/models:/srv/harvestify/models:ro
+    environment:
+      HARVESTIFY_MODEL_DIR: /srv/harvestify/models
+      HARVESTIFY_DATA_DIR: /srv/harvestify/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health/ready', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - agrimart-net
+
+  backend:
+    build:
+      context: ./backend/django
+      dockerfile: Dockerfile
+    container_name: agrimart-backend
+    depends_on:
+      db:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+    environment:
+      DJANGO_ENV: ${DJANGO_ENV:-production}
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.production}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-production-secret-key-must-be-configured-with-at-least-50-characters}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-backend,localhost,127.0.0.1,frontend}
+      DATABASE_ENGINE: django.db.backends.postgresql
+      DATABASE_NAME: ${DATABASE_NAME:-agrimart}
+      DATABASE_USER: ${DATABASE_USER:-agrimart}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-agrimart_secure_password}
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost,http://127.0.0.1,http://localhost:5173,http://localhost:80}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost,http://127.0.0.1,http://localhost:80}
+      ML_SERVICE_ENABLED: "True"
+      ML_SERVICE_URL: http://ml-service:8100
+      ML_CONNECT_TIMEOUT: "2"
+      ML_READ_TIMEOUT: "20"
+      DATA_GOV_IN_API_KEY: ${DATA_GOV_IN_API_KEY:-}
+      MARKET_FORECAST_MODEL_VALIDATED: ${MARKET_FORECAST_MODEL_VALIDATED:-False}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - agrimart-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agrimart-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - agrimart-net
+
+volumes:
+  postgres_data:
+    name: agrimart-postgres-data
+
+networks:
+  agrimart-net:
+    name: agrimart-network
+

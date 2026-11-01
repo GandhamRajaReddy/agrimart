@@ -13,26 +13,23 @@ export const OTPVerificationModal = ({
 }) => {
   const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
   const [resendTimer, setResendTimer] = useState(30);
-  const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef([]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
     setOtpValues(['', '', '', '', '', '']);
     setResendTimer(30);
-    setCanResend(false);
     const focusTimer = setTimeout(() => inputRefs.current[0]?.focus(), 100);
     return () => clearTimeout(focusTimer);
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || resendTimer <= 0) {
-      setCanResend(resendTimer <= 0);
-      return undefined;
-    }
+    if (!isOpen || resendTimer <= 0) return undefined;
     const interval = setInterval(() => setResendTimer((value) => Math.max(0, value - 1)), 1000);
     return () => clearInterval(interval);
   }, [isOpen, resendTimer]);
+
+  const canResend = resendTimer <= 0;
 
   if (!isOpen) return null;
 
@@ -69,7 +66,6 @@ export const OTPVerificationModal = ({
   const handleResendClick = () => {
     if (!canResend || isLoading) return;
     setResendTimer(30);
-    setCanResend(false);
     setOtpValues(['', '', '', '', '', '']);
     onResend();
   };

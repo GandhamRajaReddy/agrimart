@@ -1,4 +1,4 @@
-import { AlertTriangle, Sprout } from 'lucide-react';
+import { Sprout } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../../config/routes';
 

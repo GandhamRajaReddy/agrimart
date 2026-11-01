@@ -47,13 +47,12 @@ const AIDetectionPage = () => {
   const [isValidatingImage, setIsValidatingImage] = useState(false);
 
   useEffect(() => {
-    if (!file) {
-      setPreviewUrl("");
-      return undefined;
-    }
+    if (!file) return undefined;
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
   }, [file]);
 
   const handleFileChange = (event) => {
